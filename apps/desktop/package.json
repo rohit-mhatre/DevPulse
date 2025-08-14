@@ -1,0 +1,60 @@
+{
+  "name": "devpulse-desktop",
+  "productName": "DevPulse Desktop",
+  "version": "1.0.0",
+  "description": "DevPulse Desktop - Development Activity Tracker",
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [],
+  "author": {
+    "name": "rohitinho",
+    "email": "mhatre0303rohit@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.2.0",
+    "canvas": "^3.1.2",
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^10.1.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.3",
+    "@electron-forge/maker-deb": "^7.8.3",
+    "@electron-forge/maker-rpm": "^7.8.3",
+    "@electron-forge/maker-squirrel": "^7.8.3",
+    "@electron-forge/maker-zip": "^7.8.3",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
+    "@electron-forge/plugin-fuses": "^7.8.3",
+    "@electron-forge/plugin-webpack": "^7.8.3",
+    "@electron/fuses": "^1.8.0",
+    "@jest/globals": "^29.7.0",
+    "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "@vercel/webpack-asset-relocator-loader": "^1.10.0",
+    "@vitest/ui": "^3.2.4",
+    "css-loader": "^7.1.2",
+    "electron": "37.2.6",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.33.0",
+    "eslint-plugin-import": "^2.32.0",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "node-loader": "^2.1.0",
+    "spectron": "^19.0.0",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

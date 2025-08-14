@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>DevPulse Desktop</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 40px;
+        background: #1a1a1a;
+        color: #e0e0e0;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .container {
+        text-align: center;
+        background: #2a2a2a;
+        padding: 40px;
+        border-radius: 12px;
+        border: 1px solid #333;
+        max-width: 600px;
+      }
+      h1 {
+        font-size: 2.5em;
+        margin: 0 0 10px 0;
+        font-weight: 600;
+        color: #fff;
+      }
+      .subtitle {
+        font-size: 1.1em;
+        margin: 0 0 30px 0;
+        opacity: 0.8;
+        color: #a0a0a0;
+      }
+      .status {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #4CAF50;
+        background: #1e2f1e;
+      }
+      .dashboard-button {
+        display: inline-block;
+        background: #6366f1;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        margin: 20px 0;
+        transition: background 0.2s;
+        cursor: pointer;
+        border: none;
+        font-size: 16px;
+      }
+      .dashboard-button:hover {
+        background: #4f46e5;
+      }
+      .tray-info {
+        background: #2d2d2d;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #6366f1;
+      }
+      .minimal-text {
+        font-size: 0.9em;
+        opacity: 0.7;
+        margin-top: 20px;
+        color: #a0a0a0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>DevPulse</h1>
+      <p class="subtitle">Privacy-First Developer Analytics</p>
+      
+      <div class="status" id="trackingStatus">
+        <strong>🔄 Checking status...</strong><br>
+        Loading tracking information...
+      </div>
+
+      <button class="dashboard-button" onclick="openDashboard()">
+        📊 Open Web Dashboard
+      </button>
+
+      <div class="tray-info">
+        <strong>💡 Access DevPulse from your system tray</strong><br>
+        Look for the DevPulse icon in your menu bar (top-right on macOS)<br>
+        Right-click for options, left-click for quick stats
+      </div>
+      
+      <div class="status" style="background: #1e1e2e; border-left-color: #6366f1;">
+        <strong>🔒 100% Private & Local</strong><br>
+        All data stays on your computer. No external tracking.
+      </div>
+      
+      <p class="minimal-text">
+        This window can be minimized. DevPulse runs in the background.
+      </p>
+    </div>
+
+    <script>
+      // Open web dashboard (dynamic URL)
+      async function openDashboard() {
+        try {
+          const dashboardUrl = await window.devPulseAPI?.getDashboardUrl();
+          if (dashboardUrl) {
+            window.open(dashboardUrl, '_blank');
+          } else {
+            // Fallback to default
+            window.open('http://localhost:3001', '_blank');
+          }
+        } catch (error) {
+          console.log('Could not get dashboard URL, using default');
+          window.open('http://localhost:3001', '_blank');
+        }
+      }
+
+      // Simple status update
+      async function updateStatus() {
+        const statusElement = document.getElementById('trackingStatus');
+        const now = new Date().toLocaleTimeString();
+        
+        try {
+          const status = await window.devPulseAPI?.getTrackingStatus();
+          
+          if (status?.isTracking) {
+            statusElement.innerHTML = `
+              <strong>🚀 Activity Tracking ACTIVE</strong><br>
+              Monitoring development activity • ${now}
+            `;
+            statusElement.style.background = '#1e2f1e';
+            statusElement.style.borderLeftColor = '#4CAF50';
+          } else {
+            statusElement.innerHTML = `
+              <strong>⏸️ Activity Tracking PAUSED</strong><br>
+              Use system tray to start tracking • ${now}
+            `;
+            statusElement.style.background = '#2f2f1e';
+            statusElement.style.borderLeftColor = '#FFC107';
+          }
+        } catch (error) {
+          statusElement.innerHTML = `
+            <strong>🔄 Loading Status...</strong><br>
+            Connecting to tracking system... ${now}
+          `;
+        }
+      }
+
+      // Initialize
+      function init() {
+        if (window.devPulseAPI) {
+          updateStatus();
+          setInterval(updateStatus, 5000);
+        } else {
+          setTimeout(init, 1000);
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

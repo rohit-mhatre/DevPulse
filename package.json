@@ -1,0 +1,37 @@
+{
+  "name": "devpulse",
+  "version": "1.0.0",
+  "description": "Privacy-first developer productivity analytics platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces",
+    "test": "npm run test --workspaces",
+    "test:unit": "npm run test:unit --workspaces",
+    "test:integration": "npm run test:integration --workspaces",
+    "test:e2e": "npm run test:e2e --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "npm run clean --workspaces"
+  },
+  "devDependencies": {
+    "lerna": "^8.0.0",
+    "@nx/workspace": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "keywords": [
+    "productivity",
+    "developer-tools",
+    "privacy-first",
+    "analytics",
+    "time-tracking"
+  ],
+  "author": "DevPulse Team",
+  "license": "MIT"
+}
