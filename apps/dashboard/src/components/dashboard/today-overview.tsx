@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, isToday, startOfHour, endOfHour } from 'date-fns';
+import { isToday } from 'date-fns';
 
 interface ActivityData {
   timestamp: number;
@@ -52,7 +52,7 @@ export function TodayOverview({ data }: TodayOverviewProps) {
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Today's Activity Timeline</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Today&apos;s Activity Timeline</h3>
           <p className="text-sm text-gray-600">
             {totalMinutes} minutes total • Peak at {peakHour.hour}
           </p>

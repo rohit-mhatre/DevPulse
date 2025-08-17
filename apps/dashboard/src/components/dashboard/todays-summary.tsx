@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { isToday, format } from 'date-fns';
-import { Clock, Target, TrendingUp, Calendar, Coffee, Zap } from 'lucide-react';
+import { Clock, Target, TrendingUp, Calendar, Coffee, Zap, BarChart3, Activity } from 'lucide-react';
 
 interface ActivityData {
   timestamp: number;
@@ -156,104 +157,196 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           <Calendar className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Today's Summary</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Today&apos;s Summary</h3>
         </div>
         <span className="text-sm text-gray-500">{format(new Date(), 'EEEE, MMM d')}</span>
       </div>
 
-      {/* Key Metrics */}
+      {/* Enhanced Key Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="text-center p-3 rounded-lg bg-blue-50">
-          <Clock className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-          <p className="text-xl font-bold text-blue-600">{formatDuration(todayStats.totalTime)}</p>
-          <p className="text-xs text-blue-600">Total Time</p>
+        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 via-blue-50 to-indigo-100 border border-blue-200 hover:shadow-md transition-shadow">
+          <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Clock className="w-6 h-6 text-blue-600" />
+          </div>
+          <p className="text-2xl font-bold text-blue-700 mb-1">{formatDuration(todayStats.totalTime)}</p>
+          <p className="text-sm text-blue-600 font-medium">Total Time</p>
         </div>
         
-        <div className="text-center p-3 rounded-lg bg-green-50">
-          <Target className="w-6 h-6 text-green-600 mx-auto mb-1" />
-          <p className="text-xl font-bold text-green-600">{formatDuration(todayStats.productiveTime)}</p>
-          <p className="text-xs text-green-600">Productive</p>
+        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-50 via-green-50 to-emerald-100 border border-green-200 hover:shadow-md transition-shadow">
+          <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Target className="w-6 h-6 text-green-600" />
+          </div>
+          <p className="text-2xl font-bold text-green-700 mb-1">{formatDuration(todayStats.productiveTime)}</p>
+          <p className="text-sm text-green-600 font-medium">Productive</p>
         </div>
         
-        <div className="text-center p-3 rounded-lg bg-purple-50">
-          <Zap className="w-6 h-6 text-purple-600 mx-auto mb-1" />
-          <p className="text-xl font-bold text-purple-600">{todayStats.totalActivities}</p>
-          <p className="text-xs text-purple-600">Activities</p>
+        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 via-purple-50 to-violet-100 border border-purple-200 hover:shadow-md transition-shadow">
+          <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Zap className="w-6 h-6 text-purple-600" />
+          </div>
+          <p className="text-2xl font-bold text-purple-700 mb-1">{todayStats.totalActivities}</p>
+          <p className="text-sm text-purple-600 font-medium">Activities</p>
         </div>
         
-        <div className="text-center p-3 rounded-lg bg-orange-50">
-          <TrendingUp className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-          <p className={`text-xl font-bold px-2 py-1 rounded ${getFocusScoreColor(todayStats.focusScore)}`}>
+        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 via-orange-50 to-amber-100 border border-orange-200 hover:shadow-md transition-shadow">
+          <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+            <TrendingUp className="w-6 h-6 text-orange-600" />
+          </div>
+          <p className={`text-2xl font-bold mb-1 px-3 py-1 rounded-lg ${getFocusScoreColor(todayStats.focusScore)}`}>
             {todayStats.focusScore}%
           </p>
-          <p className="text-xs text-orange-600">Focus Score</p>
+          <p className="text-sm text-orange-600 font-medium">Focus Score</p>
         </div>
       </div>
 
-      {/* Activity Breakdown */}
+      {/* Enhanced Activity Breakdown with Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Activity Types */}
+        {/* Activity Types with Bar Chart */}
         <div>
-          <h4 className="font-medium text-gray-800 mb-3">Activity Breakdown</h4>
+          <div className="flex items-center space-x-2 mb-3">
+            <BarChart3 className="w-4 h-4 text-gray-600" />
+            <h4 className="font-medium text-gray-800">Activity Distribution</h4>
+          </div>
+          
+          {/* Mini bar chart */}
+          <div className="h-24 mb-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={Object.entries(todayStats.activityBreakdown)
+                  .sort(([,a], [,b]) => b - a)
+                  .slice(0, 5)
+                  .map(([type, seconds]) => ({
+                    name: type,
+                    value: Math.round(seconds / 60),
+                    fill: {
+                      code: '#6366f1',
+                      build: '#10b981',
+                      test: '#f59e0b',
+                      debug: '#ef4444',
+                      research: '#8b5cf6',
+                      design: '#ec4899',
+                      document: '#84cc16',
+                      communication: '#f97316',
+                      browsing: '#06b6d4',
+                      other: '#6b7280'
+                    }[type as keyof typeof getActivityIcon] || '#6b7280'
+                  }))
+                }
+                margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+              >
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
+                />
+                <YAxis hide />
+                <Bar 
+                  dataKey="value" 
+                  radius={[2, 2, 0, 0]}
+                >
+                  {Object.entries(todayStats.activityBreakdown)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                    .map((entry, index) => {
+                      const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+                      return <Cell key={`cell-${index}`} fill={colors[index]} />;
+                    })
+                  }
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Activity list with enhanced styling */}
           <div className="space-y-2">
             {Object.entries(todayStats.activityBreakdown)
               .sort(([,a], [,b]) => b - a)
               .slice(0, 5)
-              .map(([type, seconds]) => (
-                <div key={type} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg">{getActivityIcon(type)}</span>
-                    <span className="text-sm font-medium text-gray-700 capitalize">{type}</span>
+              .map(([type, seconds], index) => {
+                const percentage = Math.round((seconds / todayStats.totalTime) * 100);
+                const colors = ['bg-indigo-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500'];
+                return (
+                  <div key={type} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors[index]}`} />
+                      <span className="text-lg">{getActivityIcon(type)}</span>
+                      <span className="text-sm font-medium text-gray-700 capitalize">{type}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-gray-900">{formatDuration(seconds)}</span>
+                      <div className="text-xs text-gray-500">{percentage}%</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-medium text-gray-900">{formatDuration(seconds)}</span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      ({Math.round((seconds / todayStats.totalTime) * 100)}%)
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             }
           </div>
         </div>
 
-        {/* App Usage */}
+        {/* App Usage with Progress Bars */}
         <div>
-          <h4 className="font-medium text-gray-800 mb-3">Top Applications</h4>
-          <div className="space-y-2">
+          <div className="flex items-center space-x-2 mb-3">
+            <Activity className="w-4 h-4 text-gray-600" />
+            <h4 className="font-medium text-gray-800">Top Applications</h4>
+          </div>
+          
+          <div className="space-y-3">
             {Object.entries(todayStats.appBreakdown)
               .sort(([,a], [,b]) => b - a)
               .slice(0, 5)
-              .map(([app, seconds]) => (
-                <div key={app} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 truncate">{app}</span>
-                  <div className="text-right">
-                    <span className="text-sm font-medium text-gray-900">{formatDuration(seconds)}</span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      ({Math.round((seconds / todayStats.totalTime) * 100)}%)
-                    </span>
+              .map(([app, seconds], index) => {
+                const percentage = Math.round((seconds / todayStats.totalTime) * 100);
+                const maxSeconds = Math.max(...Object.values(todayStats.appBreakdown));
+                const relativeWidth = (seconds / maxSeconds) * 100;
+                const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500'];
+                
+                return (
+                  <div key={app} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 truncate flex-1 mr-2">{app}</span>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-gray-900">{formatDuration(seconds)}</span>
+                        <div className="text-xs text-gray-500">{percentage}%</div>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${colors[index]}`}
+                        style={{ width: `${relativeWidth}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             }
           </div>
         </div>
       </div>
 
-      {/* Session Stats */}
+      {/* Enhanced Session Stats */}
       <div className="mt-6 pt-4 border-t border-gray-100">
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-sm text-gray-500">Longest Session</p>
-            <p className="font-medium text-gray-900">{formatDuration(todayStats.longestSession)}</p>
+          <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+            <div className="flex items-center justify-center mb-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+            </div>
+            <p className="text-sm text-blue-600 font-medium mb-1">Longest Session</p>
+            <p className="text-lg font-bold text-blue-700">{formatDuration(todayStats.longestSession)}</p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Average Session</p>
-            <p className="font-medium text-gray-900">{formatDuration(todayStats.averageSession)}</p>
+          <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
+            <div className="flex items-center justify-center mb-2">
+              <Target className="w-4 h-4 text-green-600" />
+            </div>
+            <p className="text-sm text-green-600 font-medium mb-1">Average Session</p>
+            <p className="text-lg font-bold text-green-700">{formatDuration(todayStats.averageSession)}</p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Break Time</p>
-            <p className="font-medium text-gray-900">{formatDuration(todayStats.breakTime)}</p>
+          <div className="p-3 rounded-lg bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100">
+            <div className="flex items-center justify-center mb-2">
+              <Coffee className="w-4 h-4 text-orange-600" />
+            </div>
+            <p className="text-sm text-orange-600 font-medium mb-1">Break Time</p>
+            <p className="text-lg font-bold text-orange-700">{formatDuration(todayStats.breakTime)}</p>
           </div>
         </div>
       </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Settings, Search, Calendar, User, LogOut, Target } from 'lucide-react';
+import { Bell, Settings, Search, Calendar, User, LogOut, Target, Github, BarChart3, Brain } from 'lucide-react';
 import Link from 'next/link';
+import { ExportWidget } from '@/components/export/export-widget';
 
 export function DashboardHeader() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -12,15 +13,47 @@ export function DashboardHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
-              <div className="flex items-center space-x-2">
+              <Link href="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">DP</span>
                 </div>
                 <span className="text-xl font-bold text-gray-900">DevPulse</span>
-              </div>
+              </Link>
             </div>
+            
+            {/* Navigation Links */}
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link 
+                href="/"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>Dashboard</span>
+              </Link>
+              <Link 
+                href="/github"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+              >
+                <Github className="h-4 w-4" />
+                <span>GitHub</span>
+              </Link>
+              <Link 
+                href="/focus"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+              >
+                <Target className="h-4 w-4" />
+                <span>Focus</span>
+              </Link>
+              <Link 
+                href="/ai-analytics"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+              >
+                <Brain className="h-4 w-4" />
+                <span>AI Analytics</span>
+              </Link>
+            </nav>
           </div>
 
           {/* Search Bar */}
@@ -39,14 +72,9 @@ export function DashboardHeader() {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            {/* Focus Session Link */}
-            <Link
-              href="/focus"
-              className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-            >
-              <Target className="h-4 w-4" />
-              <span className="hidden sm:block">Focus</span>
-            </Link>
+            {/* Export Widget */}
+            <ExportWidget className="hidden md:block" />
+            
 
             {/* Notifications */}
             <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
@@ -82,14 +110,14 @@ export function DashboardHeader() {
                     <p className="text-sm font-medium text-gray-900">Local User</p>
                     <p className="text-xs text-gray-500">Privacy-first tracking</p>
                   </div>
-                  <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link href="/settings/integrations" className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <Settings className="h-4 w-4 mr-3" />
-                    Preferences
-                  </button>
-                  <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Settings
+                  </Link>
+                  <Link href="/export" className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <LogOut className="h-4 w-4 mr-3" />
                     Export Data
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>

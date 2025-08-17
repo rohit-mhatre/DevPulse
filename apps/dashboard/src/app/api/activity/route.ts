@@ -1,26 +1,80 @@
 import { NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
-import os from 'os';
+import { devPulseDB } from '@/lib/database';
+
+interface ApiError extends Error {
+  status?: number;
+  code?: string;
+  context?: Record<string, any>;
+}
+
+function createApiError(message: string, status: number = 500, code?: string, context?: Record<string, any>): ApiError {
+  const error = new Error(message) as ApiError;
+  error.status = status;
+  error.code = code;
+  error.context = context;
+  return error;
+}
+
+function handleApiError(error: Error | ApiError, operation: string) {
+  const isApiError = 'status' in error;
+  const status = isApiError ? (error as ApiError).status || 500 : 500;
+  const code = isApiError ? (error as ApiError).code : 'INTERNAL_ERROR';
+  
+  console.error(`API Error in ${operation}:`, {
+    message: error.message,
+    stack: error.stack,
+    status,
+    code,
+    context: isApiError ? (error as ApiError).context : undefined,
+    timestamp: new Date().toISOString()
+  });
+
+  // Determine user-friendly message based on error type
+  let userMessage = 'An unexpected error occurred';
+  if (error.message.includes('database') || error.message.includes('SQLITE')) {
+    userMessage = 'Database connection error. Please ensure the desktop app is running.';
+  } else if (error.message.includes('timeout')) {
+    userMessage = 'Request timed out. Please try again.';
+  } else if (error.message.includes('permission')) {
+    userMessage = 'Permission denied. Please check your access rights.';
+  }
+
+  return NextResponse.json(
+    {
+      error: {
+        message: userMessage,
+        code,
+        operation,
+        timestamp: new Date().toISOString()
+      }
+    },
+    { 
+      status,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'X-Error-Code': code,
+        'X-Error-Operation': operation
+      }
+    }
+  );
+}
+
 
 // This connects to the same database as the desktop app
 export async function GET() {
+  const startTime = Date.now();
+  
   try {
-    // Path to the desktop app's database
-    // This matches the path used by the Electron app: app.getPath('userData')
-    const userDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'DevPulse Desktop');
-    const dbPath = path.join(userDataPath, 'devpulse.db');
+    // Check if database is available with timeout
+    const dbCheckPromise = devPulseDB.isAvailable();
+    const timeoutPromise = new Promise<boolean>((_, reject) => {
+      setTimeout(() => reject(createApiError('Database availability check timed out', 503, 'DATABASE_TIMEOUT')), 5000);
+    });
     
-    console.log('Attempting to connect to database at:', dbPath);
+    const isAvailable = await Promise.race([dbCheckPromise, timeoutPromise]);
     
-    let db;
-    try {
-      db = new Database(dbPath);
-      console.log('Successfully connected to database');
-    } catch (error) {
-      // If database doesn't exist, return empty data
-      console.log('Database connection failed:', error.message);
-      console.log('Database path tried:', dbPath);
+    if (!isAvailable) {
+      console.log('Database not available - returning empty data');
       return NextResponse.json({
         activities: [],
         projects: [],
@@ -31,73 +85,127 @@ export async function GET() {
           avgSessionTime: 0,
           topApp: '',
           productivityScore: 0
+        },
+        metadata: {
+          source: 'fallback',
+          message: 'Desktop app database not accessible',
+          responseTime: Date.now() - startTime
+        }
+      }, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Data-Source': 'fallback'
         }
       });
     }
 
-    // Get today's activities
+    // Get today's activities with error handling and timeout
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
-    const activities = db.prepare(`
-      SELECT 
-        al.*,
-        p.name as project_name,
-        p.path as project_path
-      FROM activity_logs al
-      LEFT JOIN projects p ON al.project_id = p.id
-      WHERE al.started_at >= ? AND al.started_at < ?
-      ORDER BY al.started_at DESC
-      LIMIT 100
-    `).all(startOfDay.toISOString(), endOfDay.toISOString());
-
-    // Get all projects
-    const projects = db.prepare(`
-      SELECT * FROM projects
-      ORDER BY updated_at DESC
-    `).all();
-
-    // Calculate stats
-    const totalTime = activities.reduce((sum: number, a: any) => sum + a.duration_seconds, 0);
-    const uniqueProjects = new Set(activities.map((a: any) => a.project_id).filter(Boolean)).size;
-    const appCounts = activities.reduce((acc: Record<string, number>, a: any) => {
-      acc[a.app_name] = (acc[a.app_name] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const topApp = Object.keys(appCounts).reduce((a, b) => appCounts[a] > appCounts[b] ? a : b, '') || '';
-
-    const stats = {
-      totalTime,
-      activities: activities.length,
-      activeProjects: uniqueProjects,
-      avgSessionTime: activities.length > 0 ? Math.floor(totalTime / activities.length) : 0,
-      topApp,
-      productivityScore: Math.min(Math.floor((totalTime / 28800) * 100), 100) // Out of 8 hours
+    // Create timeout wrapper for database operations
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(createApiError(`${operation} timed out after ${timeoutMs}ms`, 503, 'OPERATION_TIMEOUT'));
+        }, timeoutMs);
+      });
+      return Promise.race([promise, timeoutPromise]);
     };
 
-    // Transform activities to match frontend interface
-    const transformedActivities = activities.map((activity: any) => ({
-      timestamp: new Date(activity.started_at).getTime(),
-      activity_type: activity.activity_type || 'other',
-      app_name: activity.app_name,
-      duration_seconds: activity.duration_seconds,
-      project_name: activity.project_name || null
-    }));
+    // Execute database operations in parallel with timeouts
+    const [activities, projects, stats] = await Promise.allSettled([
+      withTimeout(
+        devPulseDB.getActivities({
+          startDate: startOfDay.toISOString(),
+          endDate: endOfDay.toISOString(),
+          limit: 100
+        }),
+        10000,
+        'Get activities'
+      ),
+      withTimeout(
+        devPulseDB.getProjects(),
+        5000,
+        'Get projects'
+      ),
+      withTimeout(
+        devPulseDB.getDailyStats(today.toISOString().split('T')[0]),
+        5000,
+        'Get daily stats'
+      )
+    ]);
 
-    db.close();
+    // Handle partial failures gracefully
+    const activitiesData = activities.status === 'fulfilled' ? activities.value : [];
+    const projectsData = projects.status === 'fulfilled' ? projects.value : [];
+    const statsData = stats.status === 'fulfilled' ? stats.value : {
+      totalTime: 0,
+      activities: 0,
+      activeProjects: 0,
+      avgSessionTime: 0,
+      topApp: '',
+      productivityScore: 0
+    };
+
+    // Log any failures
+    const failures = [activities, projects, stats]
+      .map((result, index) => ({ result, operation: ['activities', 'projects', 'stats'][index] }))
+      .filter(({ result }) => result.status === 'rejected')
+      .map(({ result, operation }) => ({ operation, error: (result as PromiseRejectedResult).reason }));
+
+    if (failures.length > 0) {
+      console.warn('Some database operations failed:', failures);
+    }
+
+    // Transform activities to match frontend interface with error handling
+    const transformedActivities = activitiesData.map((activity) => {
+      try {
+        return {
+          timestamp: new Date(activity.started_at).getTime(),
+          activity_type: activity.activity_type || 'other',
+          app_name: activity.app_name || 'Unknown',
+          duration_seconds: activity.duration_seconds || 0,
+          project_name: activity.project_name || null
+        };
+      } catch (error) {
+        console.warn('Failed to transform activity:', activity, error);
+        return {
+          timestamp: Date.now(),
+          activity_type: 'other',
+          app_name: 'Unknown',
+          duration_seconds: 0,
+          project_name: null
+        };
+      }
+    });
+
+    const responseTime = Date.now() - startTime;
 
     return NextResponse.json({
       activities: transformedActivities,
-      projects,
-      stats
+      projects: projectsData,
+      stats: statsData,
+      metadata: {
+        source: 'database',
+        responseTime,
+        activitiesCount: transformedActivities.length,
+        projectsCount: projectsData.length,
+        hasFailures: failures.length > 0,
+        failures: failures.map(f => ({ operation: f.operation, error: f.error.message }))
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'private, max-age=10',
+        'X-Response-Time': responseTime.toString(),
+        'X-Data-Source': 'database',
+        'X-Activities-Count': transformedActivities.length.toString()
+      }
     });
 
   } catch (error) {
-    console.error('Error fetching activity data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch activity data' },
-      { status: 500 }
-    );
+    return handleApiError(error as Error, 'GET /api/activity');
   }
 }

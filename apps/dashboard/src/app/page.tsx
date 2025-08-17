@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, startOfDay, endOfDay, subDays, isToday } from 'date-fns';
-import { Clock, Activity, TrendingUp, Calendar, BarChart3, Settings, Zap } from 'lucide-react';
+// import { format, startOfDay, endOfDay, subDays, isToday } from 'date-fns';
+// import { Clock, Activity, TrendingUp, Calendar, BarChart3, Settings, Zap } from 'lucide-react';
 
 import { DashboardHeader } from '@/components/dashboard/header';
 import { ActivityChart } from '@/components/dashboard/activity-chart';
@@ -10,7 +10,13 @@ import { ProjectBreakdown } from '@/components/dashboard/project-breakdown';
 import { TodayOverview } from '@/components/dashboard/today-overview';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { TodaysSummary } from '@/components/dashboard/todays-summary';
+import { ProductivityHeatmap } from '@/components/dashboard/productivity-heatmap';
+import { EnhancedMetrics } from '@/components/dashboard/enhanced-metrics';
 import { FocusWidget } from '@/components/focus/focus-widget';
+// GitHub component temporarily disabled - import { GitHubActivityWidgetComponent } from '@/components/github';
+import { AIInsightsPanel } from '@/components/ai/ai-insights-panel';
+import { SmartRecommendations } from '@/components/ai/smart-recommendations';
+import { ProductivityCoach } from '@/components/ai/productivity-coach';
 
 interface ActivityData {
   timestamp: number;
@@ -18,6 +24,7 @@ interface ActivityData {
   app_name: string;
   duration_seconds: number;
   project_name?: string;
+  started_at: string;
 }
 
 interface DashboardStats {
@@ -32,7 +39,9 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [aiInsights, setAiInsights] = useState<any>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  // const [selectedDate, setSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch real data from the desktop app's database
@@ -55,7 +64,11 @@ export default function DashboardPage() {
             productivityScore: 0
           });
         } else {
-          setActivityData(data.activities || []);
+          const activities = (data.activities || []).map((activity: any) => ({
+            ...activity,
+            started_at: activity.started_at || new Date(activity.timestamp).toISOString()
+          }));
+          setActivityData(activities);
           setStats(data.stats || {
             totalTime: 0,
             activities: 0,
@@ -64,6 +77,11 @@ export default function DashboardPage() {
             topApp: '',
             productivityScore: 0
           });
+          
+          // Load AI insights if we have data
+          if (activities.length > 0) {
+            loadAIInsights();
+          }
         }
         
         setIsLoading(false);
@@ -89,7 +107,37 @@ export default function DashboardPage() {
     const interval = setInterval(fetchRealData, 30000);
     
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, []);
+
+  const loadAIInsights = async () => {
+    setIsLoadingAI(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 7); // Last 7 days
+      
+      const response = await fetch(`/api/ai/insights?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}&type=comprehensive`);
+      const insights = await response.json();
+      
+      if (!insights.error) {
+        setAiInsights(insights);
+      }
+    } catch (error) {
+      console.error('Failed to load AI insights:', error);
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+  const getTimeRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 7);
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
+  };
 
   if (isLoading) {
     return (
@@ -107,41 +155,32 @@ export default function DashboardPage() {
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            icon={<Clock className="w-6 h-6" />}
-            title="Total Time"
-            value={formatDuration(stats?.totalTime || 0)}
-            subtitle="Today"
-            color="bg-blue-500"
-          />
-          <StatsCard
-            icon={<Activity className="w-6 h-6" />}
-            title="Activities"
-            value={stats?.activities.toString() || '0'}
-            subtitle="Recorded today"
-            color="bg-green-500"
-          />
-          <StatsCard
-            icon={<BarChart3 className="w-6 h-6" />}
-            title="Projects"
-            value={stats?.activeProjects.toString() || '0'}
-            subtitle="Active today"
-            color="bg-purple-500"
-          />
-          <StatsCard
-            icon={<TrendingUp className="w-6 h-6" />}
-            title="Productivity"
-            value={`${stats?.productivityScore || 0}%`}
-            subtitle="Daily score"
-            color="bg-orange-500"
-          />
+        {/* Enhanced Metrics Dashboard */}
+        <div className="mb-8">
+          <EnhancedMetrics data={activityData} focusGoal={240} />
         </div>
 
         {/* Today's Summary - Full Width */}
         <div className="mb-8">
           <TodaysSummary data={activityData} />
+        </div>
+
+        {/* AI Insights Panel - Full Width */}
+        <div className="mb-8">
+          <AIInsightsPanel data={activityData} timeRange={getTimeRange()} />
+        </div>
+
+        {/* Productivity Heatmap - Full Width */}
+        <div className="mb-8">
+          <ProductivityHeatmap data={activityData} />
+        </div>
+
+        {/* AI Recommendations - Full Width */}
+        <div className="mb-8">
+          <SmartRecommendations 
+            data={activityData} 
+            deepWorkMetrics={aiInsights?.insights}
+          />
         </div>
 
         {/* Main Dashboard Grid */}
@@ -150,11 +189,24 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-8">
             <TodayOverview data={activityData} />
             <ActivityChart data={activityData} />
+            
+            {/* AI Productivity Coach */}
+            <ProductivityCoach 
+              data={activityData}
+              deepWorkMetrics={aiInsights?.insights}
+            />
           </div>
           
           {/* Right Column - Sidebar */}
           <div className="space-y-8">
-            <FocusWidget />
+            <FocusWidget 
+              todayFocusTime={activityData.filter(a => ['code', 'build', 'test', 'debug'].includes(a.activity_type))
+                .reduce((sum, a) => sum + (a.duration_seconds), 0)} // Calculate actual focus time
+              isSessionActive={false} // Will be fetched from localStorage
+              focusScore={aiInsights?.insights?.score || stats?.productivityScore || 75}
+              dailyGoal={240 * 60} // 4 hours default
+            />
+            {/* GitHub widget temporarily disabled - <GitHubActivityWidgetComponent /> */}
             <ProjectBreakdown data={activityData} />
             <RecentActivity data={activityData.slice(0, 10)} />
           </div>
@@ -164,40 +216,16 @@ export default function DashboardPage() {
   );
 }
 
-interface StatsCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  subtitle: string;
-  color: string;
-}
 
-function StatsCard({ icon, title, value, subtitle, color }: StatsCardProps) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-        </div>
-        <div className={`${color} p-3 rounded-lg text-white`}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m`;
-  } else {
-    return `${seconds}s`;
-  }
-}
+// function formatDuration(seconds: number): string {
+//   const hours = Math.floor(seconds / 3600);
+//   const minutes = Math.floor((seconds % 3600) / 60);
+//   
+//   if (hours > 0) {
+//     return `${hours}h ${minutes}m`;
+//   } else if (minutes > 0) {
+//     return `${minutes}m`;
+//   } else {
+//     return `${seconds}s`;
+//   }
+// }

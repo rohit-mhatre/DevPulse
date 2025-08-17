@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useMemo, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import { format, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { TrendingUp, BarChart3, Activity } from 'lucide-react';
 
 interface ActivityData {
   timestamp: number;
@@ -30,11 +31,14 @@ const ACTIVITY_COLORS = {
 };
 
 export function ActivityChart({ data }: ActivityChartProps) {
+  const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
+  const [timeRange, setTimeRange] = useState<7 | 14 | 30>(7);
+
   const weeklyData = useMemo(() => {
-    const last7Days = [];
+    const lastNDays = [];
     const now = new Date();
     
-    for (let i = 6; i >= 0; i--) {
+    for (let i = timeRange - 1; i >= 0; i--) {
       const date = subDays(now, i);
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
@@ -47,16 +51,36 @@ export function ActivityChart({ data }: ActivityChartProps) {
         sum + (activity.duration_seconds / 60), 0
       );
       
-      last7Days.push({
-        date: format(date, 'MMM dd'),
-        day: format(date, 'EEE'),
+      // Calculate productivity score based on activity types
+      const productivityScore = dayActivities.reduce((score, activity) => {
+        const multiplier = {
+          code: 1.0,
+          build: 0.8,
+          test: 0.9,
+          debug: 0.7,
+          research: 0.6,
+          design: 0.8,
+          document: 0.7,
+          communication: 0.4,
+          browsing: 0.3,
+          other: 0.5
+        }[activity.activity_type] || 0.5;
+        return score + (activity.duration_seconds / 60) * multiplier;
+      }, 0);
+      
+      lastNDays.push({
+        date: format(date, timeRange <= 7 ? 'EEE' : 'MMM dd'),
+        fullDate: format(date, 'MMM dd, yyyy'),
         minutes: Math.round(totalMinutes),
-        activities: dayActivities.length
+        productivity: Math.round(productivityScore),
+        activities: dayActivities.length,
+        focusTime: dayActivities.filter(a => ['code', 'build', 'test', 'debug'].includes(a.activity_type))
+          .reduce((sum, a) => sum + (a.duration_seconds / 60), 0)
       });
     }
     
-    return last7Days;
-  }, [data]);
+    return lastNDays;
+  }, [data, timeRange]);
 
   const activityTypeData = useMemo(() => {
     const typeBreakdown: Record<string, number> = {};
@@ -73,68 +97,204 @@ export function ActivityChart({ data }: ActivityChartProps) {
     })).sort((a, b) => b.value - a.value);
   }, [data]);
 
+  const renderChart = () => {
+    const commonProps = {
+      data: weeklyData,
+      margin: { top: 20, right: 30, left: 20, bottom: 5 }
+    };
+
+    const commonElements = (
+      <>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis 
+          dataKey="date" 
+          stroke="#6b7280"
+          fontSize={12}
+        />
+        <YAxis 
+          stroke="#6b7280"
+          fontSize={12}
+          label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }}
+        />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: '#1f2937',
+            border: 'none',
+            borderRadius: '8px',
+            color: 'white'
+          }}
+          formatter={(value, name) => {
+            if (name === 'minutes') return [`${value} min`, 'Total Time'];
+            if (name === 'productivity') return [`${value} min`, 'Focus Time'];
+            if (name === 'focusTime') return [`${value} min`, 'Deep Work'];
+            return [value, name];
+          }}
+          labelFormatter={(label) => weeklyData.find(d => d.date === label)?.fullDate || label}
+        />
+      </>
+    );
+
+    switch (chartType) {
+      case 'line':
+        return (
+          <LineChart {...commonProps}>
+            {commonElements}
+            <Line 
+              type="monotone" 
+              dataKey="minutes" 
+              stroke="#6366f1" 
+              strokeWidth={2}
+              dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#6366f1', strokeWidth: 2 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="productivity" 
+              stroke="#10b981" 
+              strokeWidth={2}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+            />
+          </LineChart>
+        );
+      case 'area':
+        return (
+          <AreaChart {...commonProps}>
+            {commonElements}
+            <Area 
+              type="monotone" 
+              dataKey="minutes" 
+              stackId="1"
+              stroke="#6366f1" 
+              fill="#6366f1"
+              fillOpacity={0.6}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="focusTime" 
+              stackId="2"
+              stroke="#10b981" 
+              fill="#10b981"
+              fillOpacity={0.8}
+            />
+          </AreaChart>
+        );
+      default:
+        return (
+          <BarChart {...commonProps}>
+            {commonElements}
+            <Bar 
+              dataKey="minutes" 
+              fill="#6366f1" 
+              radius={[4, 4, 0, 0]}
+              opacity={0.8}
+            />
+            <Bar 
+              dataKey="focusTime" 
+              fill="#10b981" 
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        );
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Activity Analytics</h3>
-        <p className="text-sm text-gray-600">7-day overview and activity breakdown</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Activity Analytics</h3>
+          <p className="text-sm text-gray-600">{timeRange}-day productivity trends and activity breakdown</p>
+        </div>
+        
+        {/* Chart Controls */}
+        <div className="flex items-center space-x-4">
+          {/* Time Range Selector */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Range:</span>
+            <select 
+              value={timeRange} 
+              onChange={(e) => setTimeRange(Number(e.target.value) as 7 | 14 | 30)}
+              className="text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value={7}>7 days</option>
+              <option value={14}>14 days</option>
+              <option value={30}>30 days</option>
+            </select>
+          </div>
+          
+          {/* Chart Type Selector */}
+          <div className="flex items-center border border-gray-200 rounded-lg p-1">
+            <button
+              onClick={() => setChartType('bar')}
+              className={`p-2 rounded ${chartType === 'bar' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Bar Chart"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setChartType('line')}
+              className={`p-2 rounded ${chartType === 'line' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Line Chart"
+            >
+              <TrendingUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setChartType('area')}
+              className={`p-2 rounded ${chartType === 'area' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Area Chart"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Weekly Bar Chart */}
+        {/* Interactive Productivity Chart */}
         <div>
-          <h4 className="text-md font-medium text-gray-800 mb-4">Daily Activity (Last 7 Days)</h4>
-          <div className="h-48">
+          <h4 className="text-md font-medium text-gray-800 mb-4">Productivity Trends</h4>
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="day" 
-                  stroke="#6b7280"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: 'white'
-                  }}
-                  formatter={(value, name) => [`${value} min`, 'Activity Time']}
-                  labelFormatter={(label) => `${label}`}
-                />
-                <Bar 
-                  dataKey="minutes" 
-                  fill="#6366f1" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
+              {renderChart()}
             </ResponsiveContainer>
+          </div>
+          
+          {/* Chart Legend */}
+          <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
+              <span className="text-gray-600">Total Activity</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-gray-600">Focus Time</span>
+            </div>
           </div>
         </div>
 
-        {/* Activity Type Pie Chart */}
+        {/* Enhanced Activity Type Breakdown */}
         <div>
-          <h4 className="text-md font-medium text-gray-800 mb-4">Activity Type Breakdown</h4>
-          <div className="h-48">
+          <h4 className="text-md font-medium text-gray-800 mb-4">Activity Type Distribution</h4>
+          <div className="h-64 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={activityTypeData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={30}
-                  outerRadius={70}
-                  paddingAngle={2}
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={3}
                   dataKey="value"
                 >
                   {activityTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color} 
+                      stroke={entry.color}
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -142,28 +302,41 @@ export function ActivityChart({ data }: ActivityChartProps) {
                     backgroundColor: '#1f2937',
                     border: 'none',
                     borderRadius: '8px',
-                    color: 'white'
+                    color: 'white',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
                   }}
-                  formatter={(value) => [`${value} min`, 'Time']}
+                  formatter={(value, name) => {
+                    const percentage = activityTypeData.find(d => d.name === name)?.value || 0;
+                    const total = activityTypeData.reduce((sum, d) => sum + d.value, 0);
+                    const percent = total > 0 ? ((percentage / total) * 100).toFixed(1) : 0;
+                    return [`${value} min (${percent}%)`, 'Time Spent'];
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
           
-          {/* Legend */}
-          <div className="mt-4 space-y-2">
-            {activityTypeData.slice(0, 5).map((item, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center">
-                  <div 
-                    className="w-3 h-3 rounded-full mr-2"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-gray-700">{item.name}</span>
+          {/* Enhanced Legend with Percentages */}
+          <div className="mt-4 space-y-2 max-h-32 overflow-y-auto">
+            {activityTypeData.map((item, index) => {
+              const total = activityTypeData.reduce((sum, d) => sum + d.value, 0);
+              const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+              return (
+                <div key={index} className="flex items-center justify-between text-sm p-2 rounded hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center flex-1">
+                    <div 
+                      className="w-3 h-3 rounded-full mr-3 flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className="text-gray-700 flex-1">{item.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-medium text-gray-900">{item.value}m</span>
+                    <span className="text-xs text-gray-500 ml-2">{percentage}%</span>
+                  </div>
                 </div>
-                <span className="font-medium text-gray-900">{item.value}m</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
