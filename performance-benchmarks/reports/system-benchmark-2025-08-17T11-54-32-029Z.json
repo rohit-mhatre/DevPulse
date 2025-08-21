@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "totalTests": 1,
+    "passed": 1,
+    "warnings": 0,
+    "failed": 0,
+    "timestamp": "2025-08-17T11:54:32.029Z"
+  },
+  "results": [
+    {
+      "name": "CPU Usage Measurement",
+      "mean": 0.0065799399999997375,
+      "median": 0.006042000000007874,
+      "min": 0.005625000000009095,
+      "max": 0.011957999999992808,
+      "p95": 0.010417000000018106,
+      "p99": 0.011957999999992808,
+      "stdDev": 0.0013433934108811804,
+      "iterations": 50,
+      "timestamp": "2025-08-17T11:54:32.017Z",
+      "unit": "ms",
+      "target": 10,
+      "status": "pass"
+    }
+  ]
+}

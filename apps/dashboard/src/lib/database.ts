@@ -23,17 +23,66 @@ export interface Project {
 
 export class DevPulseDatabase {
   private dbPath: string;
+  private connectionPool: Database.Database[] = [];
+  private maxConnections = 3;
+  private currentConnections = 0;
 
   constructor() {
+    // Use the same path as the desktop app (app.getPath('userData') resolves to this on macOS)
     const userDataPath = path.join(os.homedir(), 'Library', 'Application Support', 'DevPulse Desktop');
     this.dbPath = path.join(userDataPath, 'devpulse.db');
   }
 
   private getDatabase(): Database.Database {
     try {
-      return new Database(this.dbPath);
+      // Check if file exists first
+      const fs = require('fs');
+      if (!fs.existsSync(this.dbPath)) {
+        throw new Error(`Database file does not exist at ${this.dbPath}`);
+      }
+
+      // Check if we can read the file
+      try {
+        fs.accessSync(this.dbPath, fs.constants.R_OK);
+      } catch (accessError) {
+        throw new Error(`Cannot read database file at ${this.dbPath}: ${accessError.message}`);
+      }
+      
+      // Try to reuse an existing connection from pool
+      if (this.connectionPool.length > 0) {
+        return this.connectionPool.pop()!;
+      }
+      
+      // Create new connection if under limit
+      if (this.currentConnections < this.maxConnections) {
+        this.currentConnections++;
+        return new Database(this.dbPath, { 
+          readonly: true,
+          timeout: 3000
+        });
+      }
+      
+      // Fallback to new connection if pool is empty
+      return new Database(this.dbPath, { 
+        readonly: true,
+        timeout: 3000
+      });
     } catch (error) {
-      throw new Error(`Database not found at ${this.dbPath}. Ensure DevPulse Desktop is installed and has recorded data.`);
+      throw new Error(`Database error: ${error.message}. Path checked: ${this.dbPath}`);
+    }
+  }
+
+  private releaseDatabase(db: Database.Database): void {
+    // Return connection to pool if under limit
+    if (this.connectionPool.length < this.maxConnections) {
+      this.connectionPool.push(db);
+    } else {
+      try {
+        db.close();
+        this.currentConnections--;
+      } catch (error) {
+        // Ignore close errors
+      }
     }
   }
 
@@ -100,7 +149,7 @@ export class DevPulseDatabase {
       const activities = db.prepare(query).all(...queryParams) as ActivityRecord[];
       return activities;
     } finally {
-      db.close();
+      this.releaseDatabase(db);
     }
   }
 
@@ -115,7 +164,7 @@ export class DevPulseDatabase {
       
       return projects;
     } finally {
-      db.close();
+      this.releaseDatabase(db);
     }
   }
 
@@ -274,9 +323,12 @@ export class DevPulseDatabase {
   async isAvailable(): Promise<boolean> {
     try {
       const db = this.getDatabase();
-      db.close();
+      // Test if we can query the database
+      db.prepare("SELECT COUNT(*) as count FROM activity_logs LIMIT 1").get();
+      this.releaseDatabase(db);
       return true;
-    } catch {
+    } catch (error) {
+      console.log(`Database check failed: ${error.message}, path: ${this.dbPath}`);
       return false;
     }
   }

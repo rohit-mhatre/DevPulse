@@ -1,8 +1,24 @@
 @import "tailwindcss";
 
 :root {
+  /* Forest Light Theme - Balanced Light Mode */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
+  --surface: #f8fafc;
+  --surface-elevated: #f1f5f9;
+  --surface-hover: #e2e8f0;
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #22c55e;
+  --accent-warning: #f59e0b;
+  --accent-error: #ef4444;
+  --accent-info: #10b981;
+  --accent-highlight: #10b981;
 }
 
 @theme inline {
@@ -12,15 +28,130 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Removed dark mode - using light mode only */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  letter-spacing: -0.01em;
+}
+
+/* Refined component styles */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+}
+
+.card-elevated {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-tertiary {
+  color: var(--text-tertiary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Override common Tailwind classes for light mode consistency */
+.text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+.text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+.text-blue-600 {
+  color: #3b82f6 !important;
+}
+
+.text-green-600 {
+  color: #22c55e !important;
+}
+
+.text-amber-600 {
+  color: #f59e0b !important;
+}
+
+.text-red-600 {
+  color: #ef4444 !important;
+}
+
+.text-emerald-600 {
+  color: #10b981 !important;
+}
+
+.bg-blue-600 {
+  background-color: #3b82f6 !important;
+}
+
+.bg-green-600 {
+  background-color: #22c55e !important;
+}
+
+.bg-amber-600 {
+  background-color: #f59e0b !important;
+}
+
+.bg-red-600 {
+  background-color: #ef4444 !important;
+}
+
+.bg-emerald-600 {
+  background-color: #10b981 !important;
+}
+
+/* Ensure borders are visible */
+.border-gray-200 {
+  border-color: var(--border-light) !important;
+}
+
+.border-gray-300 {
+  border-color: var(--border-medium) !important;
+}
+
+/* Focus states */
+.focus-ring:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

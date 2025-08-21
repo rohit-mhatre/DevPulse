@@ -54,3 +54,30 @@ Thumbs.db
 # SQLite database files (keep local for now)
 # *.db
 # *.sqlite
+
+# Security sensitive files
+*.key
+*.pem
+*.p12
+*.keystore
+secrets.json
+config/secrets/*
+
+# Package build artifacts
+*.tgz
+*.tar.gz
+
+# Test coverage and reports
+junit.xml
+test-results.xml
+
+# Cache directories
+.npm
+.eslintcache
+.parcel-cache
+
+# Editor directories and files
+.vscode/settings.json
+.vscode/launch.json
+*.sublime-project
+*.sublime-workspace

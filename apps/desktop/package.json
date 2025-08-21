@@ -16,17 +16,17 @@
     "test:ui": "vitest --ui"
   },
   "keywords": [],
-  "author": {
-    "name": "rohitinho",
-    "email": "mhatre0303rohit@gmail.com"
-  },
+  "author": "DevPulse",
   "license": "MIT",
   "dependencies": {
+    "@devpulse/shared": "file:../../packages/shared",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.2.0",
     "canvas": "^3.1.2",
     "electron-squirrel-startup": "^1.0.1",
-    "electron-store": "^10.1.0"
+    "electron-store": "^10.1.0",
+    "path": "^0.12.7",
+    "fs-extra": "^11.2.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",

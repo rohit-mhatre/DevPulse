@@ -343,12 +343,12 @@ export function FocusSessionManager() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Focus Session Manager</h1>
-        <p className="text-gray-400">Stay focused, track progress, build better habits</p>
+        <h1 className="text-3xl font-bold text-primary mb-2">Focus Session Manager</h1>
+        <p className="text-secondary">Stay focused, track progress, build better habits</p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-800/50 p-1 rounded-xl border border-gray-700">
+      <div className="flex space-x-1 card p-1 rounded-xl">
         {([
           { id: 'session', label: 'Active Session', icon: '🎯' },
           { id: 'stats', label: 'Statistics', icon: '📊' },
@@ -361,7 +361,7 @@ export function FocusSessionManager() {
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all flex-1 justify-center ${
               activeTab === tab.id
                 ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                : 'text-secondary hover:text-primary hover:bg-gray-100'
             }`}
           >
             <span>{tab.icon}</span>
@@ -375,40 +375,40 @@ export function FocusSessionManager() {
         <div className="space-y-8">
           {!currentSession ? (
             /* Session Setup */
-            <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 text-center">
-              <h2 className="text-2xl font-semibold text-white mb-6">Start a Focus Session</h2>
+            <div className="card rounded-xl p-8 text-center">
+              <h2 className="text-2xl font-semibold text-primary mb-6">Start a Focus Session</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
                 {sessionTypes.map(type => (
                   <button
                     key={type.id}
                     onClick={() => startSession(type.id)}
-                    className="p-6 bg-gray-700/50 hover:bg-gray-600/50 rounded-xl border border-gray-600 hover:border-gray-500 transition-all text-left"
+                    className="p-6 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 hover:border-gray-300 transition-all text-left"
                   >
                     <div className="text-3xl mb-2">{type.icon}</div>
-                    <div className="text-lg font-semibold text-white mb-1">{type.label}</div>
-                    <div className="text-sm text-gray-400">{type.description}</div>
+                    <div className="text-lg font-semibold text-primary mb-1">{type.label}</div>
+                    <div className="text-sm text-secondary">{type.description}</div>
                   </button>
                 ))}
               </div>
 
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-secondary">
                 Default duration: {Math.round(settings.defaultDuration / 60)} minutes
               </div>
             </div>
           ) : (
             /* Active Session */
             <div className="space-y-8">
-              <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 text-center">
+              <div className="card rounded-xl p-8 text-center">
                 <div className="flex items-center justify-center space-x-3 mb-6">
                   <span className="text-3xl">
                     {sessionTypes.find(t => t.id === currentSession.type)?.icon}
                   </span>
-                  <h2 className="text-2xl font-semibold text-white">
+                  <h2 className="text-2xl font-semibold text-primary">
                     {sessionTypes.find(t => t.id === currentSession.type)?.label}
                   </h2>
                   {currentSession.isPaused && (
-                    <span className="px-3 py-1 bg-yellow-900 text-yellow-300 rounded-full text-sm font-medium">
+                    <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
                       Paused
                     </span>
                   )}
@@ -424,13 +424,13 @@ export function FocusSessionManager() {
                 <div className="flex justify-center space-x-4 mt-8">
                   <button
                     onClick={pauseSession}
-                    className="px-6 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-white font-medium transition-colors"
+                    className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white font-medium transition-colors"
                   >
                     {currentSession.isPaused ? '▶️ Resume' : '⏸️ Pause'}
                   </button>
                   <button
                     onClick={() => stopSession(false)}
-                    className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-lg text-white font-medium transition-colors"
+                    className="px-6 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition-colors"
                   >
                     🛑 Stop Session
                   </button>
@@ -439,12 +439,12 @@ export function FocusSessionManager() {
 
               {/* Session Context */}
               {settings.distractionBlocking && (
-                <div className="bg-blue-900/20 border border-blue-800 rounded-xl p-4">
-                  <div className="flex items-center space-x-2 text-blue-300">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center space-x-2 text-blue-700">
                     <span>🛡️</span>
                     <span className="font-medium">Distraction blocking is active</span>
                   </div>
-                  <div className="text-sm text-blue-200 mt-1">
+                  <div className="text-sm text-blue-600 mt-1">
                     You'll be alerted if non-productive apps are detected during your session.
                   </div>
                 </div>

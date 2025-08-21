@@ -12,6 +12,7 @@ export function ExportWidget({ className = '' }: ExportWidgetProps) {
   const [isExporting, setIsExporting] = useState<string | null>(null);
 
   const quickExport = async (type: 'activity' | 'focus' | 'summary', format: 'csv' | 'json' = 'csv') => {
+    console.log('🚀 Starting export:', { type, format });
     setIsExporting(type);
     
     try {
@@ -25,10 +26,13 @@ export function ExportWidget({ className = '' }: ExportWidgetProps) {
           endDate: today
         });
 
+        console.log('📡 Calling activity export API...');
         const response = await fetch(`/api/export/activity?${params}`);
+        console.log('📡 Activity export response:', response.status, response.ok);
         if (!response.ok) throw new Error('Export failed');
 
         const blob = await response.blob();
+        console.log('✅ Activity export successful, downloading file');
         downloadFile(blob, `devpulse-activity-last-7-days.${format}`);
 
       } else if (type === 'focus') {
@@ -128,10 +132,10 @@ export function ExportWidget({ className = '' }: ExportWidgetProps) {
     },
     {
       id: 'summary',
-      label: 'Productivity Summary',
+      label: 'Productivity Summary', 
       description: 'Weekly productivity metrics',
       icon: BarChart3,
-      color: 'text-purple-600'
+      color: 'text-emerald-600'
     }
   ];
 
@@ -139,7 +143,7 @@ export function ExportWidget({ className = '' }: ExportWidgetProps) {
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
+        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
       >
         <Download className="w-4 h-4" />
         <span className="font-medium">Quick Export</span>
@@ -202,7 +206,7 @@ export function ExportWidget({ className = '' }: ExportWidgetProps) {
                     // Navigate to full export page - you can implement this
                     window.open('/export', '_blank');
                   }}
-                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Advanced Export Options →
                 </button>

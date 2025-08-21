@@ -21,22 +21,37 @@ export async function GET(request: NextRequest) {
       format: (searchParams.get('format') as 'csv' | 'json') || 'json'
     };
 
-    // Check if database is available
-    const isAvailable = await devPulseDB.isAvailable();
-    if (!isAvailable) {
+    // Try to get data from desktop app's HTTP server
+    let activities = [];
+    try {
+      const desktopUrl = `http://localhost:3001/api/activity${filters.startDate ? `?date=${filters.startDate}` : ''}`;
+      const response = await fetch(desktopUrl, {
+        signal: AbortController ? new AbortController().signal : undefined
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        activities = data.activities || [];
+        
+        // Filter by date range if endDate is provided
+        if (filters.endDate && filters.startDate !== filters.endDate) {
+          const endDate = new Date(filters.endDate);
+          activities = activities.filter(a => new Date(a.started_at) <= endDate);
+        }
+        
+        // Filter by activity types if provided
+        if (filters.activityTypes) {
+          activities = activities.filter(a => filters.activityTypes.includes(a.activity_type));
+        }
+      } else {
+        throw new Error('Desktop app server not available');
+      }
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Database not found. Ensure DevPulse Desktop is installed and has recorded data.' },
-        { status: 404 }
+        { error: 'Desktop app not available. Please ensure DevPulse Desktop is running.' },
+        { status: 503 }
       );
     }
-
-    // Get activities using the database helper
-    const activities = await devPulseDB.getActivities({
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      activityTypes: filters.activityTypes,
-      limit: 10000
-    });
 
     // Transform data for export
     const exportData = activities.map((activity) => {

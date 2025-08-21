@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { format, subDays, isWithinInterval, startOfDay, endOfDay, startOfWeek, addDays } from 'date-fns';
 import { Calendar, TrendingUp, Clock, Zap } from 'lucide-react';
 
@@ -27,10 +27,55 @@ interface HeatmapCell {
 }
 
 export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
+  
+  const [historicalData, setHistoricalData] = useState<Record<string, ActivityData[]>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch historical data for the heatmap
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      setIsLoading(true);
+      const dataByDate: Record<string, ActivityData[]> = {};
+      const now = new Date();
+      const endOfCurrentWeek = addDays(startOfWeek(now), 6);
+      const startDate = subDays(endOfCurrentWeek, 83);
+      
+      // Fetch data for each day in the 12-week range
+      const promises = [];
+      for (let i = 0; i < 84; i++) {
+        const date = addDays(startDate, i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        promises.push(
+          fetch(`/api/activity?date=${dateStr}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.activities) {
+                dataByDate[dateStr] = data.activities;
+              }
+            })
+            .catch(err => {
+              console.warn(`Failed to fetch data for ${dateStr}:`, err);
+              dataByDate[dateStr] = [];
+            })
+        );
+      }
+      
+      await Promise.all(promises);
+      setHistoricalData(dataByDate);
+      setIsLoading(false);
+    };
+    
+    fetchHistoricalData();
+  }, []);
+  
   const heatmapData = useMemo(() => {
     const weeks: HeatmapCell[][] = [];
     const now = new Date();
-    const startDate = subDays(now, 83); // 12 weeks back
+    // Calculate start date to ensure "now" falls in the last week
+    const endOfCurrentWeek = addDays(startOfWeek(now), 6);
+    const startDate = subDays(endOfCurrentWeek, 83); // 12 weeks back from end of current week
+    
     
     // Generate 12 weeks of data
     for (let week = 0; week < 12; week++) {
@@ -39,12 +84,11 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
       
       for (let day = 0; day < 7; day++) {
         const currentDate = addDays(weekStart, day);
-        const dayStart = startOfDay(currentDate);
-        const dayEnd = endOfDay(currentDate);
         
-        const dayActivities = data.filter(activity =>
-          isWithinInterval(new Date(activity.timestamp), { start: dayStart, end: dayEnd })
-        );
+        // Get activities for this specific date
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayActivities = historicalData[dateStr] || [];
+        
         
         const totalMinutes = dayActivities.reduce((sum, activity) =>
           sum + (activity.duration_seconds / 60), 0
@@ -81,15 +125,15 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
     }
     
     return weeks;
-  }, [data]);
+  }, [historicalData]);
 
   const getIntensityColor = (intensity: number): string => {
     const colors = [
       'bg-gray-100', // 0 - no activity
-      'bg-indigo-200', // 1 - light activity
-      'bg-indigo-400', // 2 - moderate activity
-      'bg-indigo-600', // 3 - high activity
-      'bg-indigo-800'  // 4 - very high activity
+      'bg-blue-200', // 1 - light activity
+      'bg-blue-400', // 2 - moderate activity
+      'bg-blue-600', // 3 - high activity
+      'bg-blue-800'  // 4 - very high activity
     ];
     return colors[intensity] || colors[0];
   };
@@ -130,8 +174,19 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
           <Calendar className="w-5 h-5 text-gray-600" />
           <h3 className="text-lg font-semibold text-gray-900">Activity Heatmap</h3>
         </div>
-        <span className="text-sm text-gray-500">Last 12 weeks</span>
+        <span className="text-sm text-gray-500">
+          {isLoading ? 'Loading historical data...' : 'Last 12 weeks'}
+        </span>
       </div>
+      
+      {/* Loading state */}
+      {isLoading && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            <span className="font-medium">Loading historical activity data...</span> Fetching data for the past 12 weeks.
+          </p>
+        </div>
+      )}
 
       {/* Heatmap Grid */}
       <div className="mb-6">
@@ -154,7 +209,7 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
                 {week.map((cell, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className={`w-3 h-3 rounded-sm ${getIntensityColor(cell.intensity)} cursor-pointer hover:ring-2 hover:ring-indigo-300 transition-all group relative`}
+                    className={`w-3 h-3 rounded-sm ${getIntensityColor(cell.intensity)} cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all group relative`}
                     title={`${cell.formattedDate}: ${Math.round(cell.value)} min activity, ${Math.round(cell.focusTime)} min focus time`}
                   >
                     {/* Tooltip */}
@@ -201,7 +256,7 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
           <div className="flex items-center justify-center mb-1">
             <Clock className="w-4 h-4 text-gray-500 mr-1" />
           </div>
-          <p className="text-lg font-bold text-indigo-600">{stats.totalHours}h</p>
+          <p className="text-lg font-bold text-blue-600">{stats.totalHours}h</p>
           <p className="text-xs text-gray-500">Total Hours</p>
         </div>
         
@@ -224,11 +279,11 @@ export function ProductivityHeatmap({ data }: ProductivityHeatmapProps) {
       
       {/* Best day highlight */}
       {stats.bestDay.value > 0 && (
-        <div className="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-100">
+        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-blue-50 rounded-lg border border-blue-100">
           <div className="flex items-center space-x-2 text-sm">
-            <TrendingUp className="w-4 h-4 text-indigo-600" />
+            <TrendingUp className="w-4 h-4 text-blue-600" />
             <span className="text-gray-700">
-              Best day: <span className="font-medium text-indigo-600">{stats.bestDay.formattedDate}</span> with {stats.bestDay.value} minutes
+              Best day: <span className="font-medium text-blue-600">{stats.bestDay.formattedDate}</span> with {stats.bestDay.value} minutes
             </span>
           </div>
         </div>

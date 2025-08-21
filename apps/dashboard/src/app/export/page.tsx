@@ -58,7 +58,7 @@ export default function ExportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,7 +73,7 @@ export default function ExportPage() {
               </button>
               <div className="h-6 w-px bg-gray-300" />
               <div className="flex items-center space-x-3">
-                <Download className="w-6 h-6 text-indigo-600" />
+                <Download className="w-6 h-6 text-blue-600" />
                 <h1 className="text-2xl font-bold text-gray-900">Data Export</h1>
               </div>
             </div>
@@ -147,8 +147,8 @@ export default function ExportPage() {
           {/* Export Stats */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Export Options</h3>
             </div>

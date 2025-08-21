@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { performanceMonitor } from '@/lib/performance-monitor';
+import { devPulseDB } from '@/lib/database';
 
 interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -57,14 +59,13 @@ export async function GET(request: NextRequest) {
 
     // Database health check
     checks.database = await performHealthCheck('database', async () => {
-      // In a real implementation, this would check database connectivity
-      // For now, we'll simulate a database check
+      const isAvailable = await devPulseDB.isAvailable();
       return {
-        status: 'healthy',
-        message: 'Database connection is healthy',
+        status: isAvailable ? 'healthy' : 'unhealthy',
+        message: isAvailable ? 'Database connection is healthy' : 'Database not available',
         metadata: {
-          connection: 'active',
-          pool_size: 10
+          connection: isAvailable ? 'active' : 'failed',
+          database_path: 'DevPulse Desktop database'
         }
       };
     });
@@ -192,11 +193,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Add performance metrics
+    const perfMetrics = performanceMonitor.getAllMetrics();
+    
     const health: SystemHealth = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       checks,
-      summary
+      summary,
+      performance: perfMetrics
     };
 
     return NextResponse.json(health, {

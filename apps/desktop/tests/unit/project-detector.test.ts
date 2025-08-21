@@ -91,16 +91,14 @@ describe('ProjectDetector', () => {
     })
 
     it('should handle directory read errors', async () => {
-      const fs = require('fs')
-      const originalReaddir = fs.promises.readdir
+      const fs = await import('fs')
+      const mockedReaddir = vi.mocked(fs.promises.readdir)
       
-      fs.promises.readdir = vi.fn().mockRejectedValue(new Error('Permission denied'))
+      // Temporarily override the mock to reject
+      mockedReaddir.mockRejectedValueOnce(new Error('Permission denied'))
       
       const result = await (projectDetector as any).analyzeDirectory('/protected/dir')
       expect(result).toBeNull()
-      
-      // Restore original mock
-      fs.promises.readdir = originalReaddir
     })
   })
 

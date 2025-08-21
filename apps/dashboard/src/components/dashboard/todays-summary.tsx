@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts/es6';
 import { isToday, format } from 'date-fns';
 import { Clock, Target, TrendingUp, Calendar, Coffee, Zap, BarChart3, Activity } from 'lucide-react';
 
@@ -15,6 +15,14 @@ interface ActivityData {
 
 interface TodaysSummaryProps {
   data: ActivityData[];
+  stats?: {
+    totalTime: number;
+    activities: number;
+    activeProjects: number;
+    avgSessionTime: number;
+    topApp: string;
+    productivityScore: number;
+  };
 }
 
 interface TodayStats {
@@ -32,11 +40,16 @@ interface TodayStats {
   appBreakdown: Record<string, number>;
 }
 
-export function TodaysSummary({ data }: TodaysSummaryProps) {
+export function TodaysSummary({ data, stats }: TodaysSummaryProps) {
   const todayStats = useMemo((): TodayStats => {
-    const todayData = data.filter(activity => isToday(new Date(activity.timestamp)));
+    // If we have pre-calculated stats from the API, use those for the main metrics
+    // and use all data since it's already filtered by the server
+    const todayData = stats ? data : data.filter(activity => {
+      const activityDate = new Date(activity.timestamp);
+      return activityDate.toDateString() === new Date().toDateString();
+    });
     
-    if (todayData.length === 0) {
+    if ((stats && stats.activities === 0) || (!stats && todayData.length === 0)) {
       return {
         totalTime: 0,
         totalActivities: 0,
@@ -53,11 +66,14 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
       };
     }
 
-    const totalTime = todayData.reduce((sum, a) => sum + a.duration_seconds, 0);
+    // Use API stats when available, otherwise calculate from data
+    const totalTime = stats ? stats.totalTime : todayData.reduce((sum, a) => sum + a.duration_seconds, 0);
+    const totalActivities = stats ? stats.activities : todayData.length;
+    
     const durations = todayData.map(a => a.duration_seconds);
-    const longestSession = Math.max(...durations);
-    const shortestSession = Math.min(...durations);
-    const averageSession = Math.floor(totalTime / todayData.length);
+    const longestSession = durations.length > 0 ? Math.max(...durations) : 0;
+    const shortestSession = durations.length > 0 ? Math.min(...durations) : 0;
+    const averageSession = stats ? stats.avgSessionTime : (totalActivities > 0 ? Math.floor(totalTime / totalActivities) : 0);
 
     // App breakdown
     const appBreakdown = todayData.reduce((acc, activity) => {
@@ -65,8 +81,8 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
       return acc;
     }, {} as Record<string, number>);
 
-    const mostUsedApp = Object.keys(appBreakdown).reduce((a, b) => 
-      appBreakdown[a] > appBreakdown[b] ? a : b, '');
+    const mostUsedApp = stats ? stats.topApp : (Object.keys(appBreakdown).length > 0 ? Object.keys(appBreakdown).reduce((a, b) => 
+      appBreakdown[a] > appBreakdown[b] ? a : b, '') : '');
 
     // Activity type breakdown
     const activityBreakdown = todayData.reduce((acc, activity) => {
@@ -90,7 +106,7 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
 
     return {
       totalTime,
-      totalActivities: todayData.length,
+      totalActivities,
       longestSession,
       shortestSession,
       averageSession,
@@ -102,7 +118,7 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
       activityBreakdown,
       appBreakdown
     };
-  }, [data]);
+  }, [data, stats]);
 
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -142,60 +158,60 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
 
   if (todayStats.totalActivities === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="card p-6">
         <div className="text-center py-8">
           <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Activity Today</h3>
-          <p className="text-gray-500">Start working to see your productivity summary!</p>
+          <h3 className="text-lg font-semibold text-primary mb-2">No Activity Today</h3>
+          <p className="text-secondary">Start working to see your productivity summary!</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div className="card p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
-          <Calendar className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Today&apos;s Summary</h3>
+          <Calendar className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-primary">Today&apos;s Summary</h3>
         </div>
-        <span className="text-sm text-gray-500">{format(new Date(), 'EEEE, MMM d')}</span>
+        <span className="text-sm text-tertiary">{format(new Date(), 'EEEE, MMM d')}</span>
       </div>
 
       {/* Enhanced Key Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 via-blue-50 to-indigo-100 border border-blue-200 hover:shadow-md transition-shadow">
-          <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Clock className="w-6 h-6 text-blue-600" />
+        <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors">
+          <div className="bg-blue-600 w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Clock className="w-5 h-5 text-white" />
           </div>
-          <p className="text-2xl font-bold text-blue-700 mb-1">{formatDuration(todayStats.totalTime)}</p>
-          <p className="text-sm text-blue-600 font-medium">Total Time</p>
+          <p className="text-xl font-semibold text-primary mb-1">{formatDuration(todayStats.totalTime)}</p>
+          <p className="text-sm text-secondary font-medium">Total Time</p>
         </div>
         
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-50 via-green-50 to-emerald-100 border border-green-200 hover:shadow-md transition-shadow">
-          <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Target className="w-6 h-6 text-green-600" />
+        <div className="text-center p-4 rounded-lg bg-green-50 border border-green-100 hover:bg-green-100 transition-colors">
+          <div className="bg-green-600 w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Target className="w-5 h-5 text-white" />
           </div>
-          <p className="text-2xl font-bold text-green-700 mb-1">{formatDuration(todayStats.productiveTime)}</p>
-          <p className="text-sm text-green-600 font-medium">Productive</p>
+          <p className="text-xl font-semibold text-primary mb-1">{formatDuration(todayStats.productiveTime)}</p>
+          <p className="text-sm text-secondary font-medium">Productive</p>
         </div>
         
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 via-purple-50 to-violet-100 border border-purple-200 hover:shadow-md transition-shadow">
-          <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Zap className="w-6 h-6 text-purple-600" />
+        <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors">
+          <div className="bg-blue-600 w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Zap className="w-5 h-5 text-white" />
           </div>
-          <p className="text-2xl font-bold text-purple-700 mb-1">{todayStats.totalActivities}</p>
-          <p className="text-sm text-purple-600 font-medium">Activities</p>
+          <p className="text-xl font-semibold text-primary mb-1">{todayStats.totalActivities}</p>
+          <p className="text-sm text-secondary font-medium">Activities</p>
         </div>
         
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 via-orange-50 to-amber-100 border border-orange-200 hover:shadow-md transition-shadow">
-          <div className="bg-orange-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <TrendingUp className="w-6 h-6 text-orange-600" />
+        <div className="text-center p-4 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors">
+          <div className="bg-orange-600 w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <TrendingUp className="w-5 h-5 text-white" />
           </div>
-          <p className={`text-2xl font-bold mb-1 px-3 py-1 rounded-lg ${getFocusScoreColor(todayStats.focusScore)}`}>
+          <p className={`text-xl font-semibold mb-1 px-2 py-1 rounded ${getFocusScoreColor(todayStats.focusScore)}`}>
             {todayStats.focusScore}%
           </p>
-          <p className="text-sm text-orange-600 font-medium">Focus Score</p>
+          <p className="text-sm text-secondary font-medium">Focus Score</p>
         </div>
       </div>
 
@@ -204,8 +220,8 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
         {/* Activity Types with Bar Chart */}
         <div>
           <div className="flex items-center space-x-2 mb-3">
-            <BarChart3 className="w-4 h-4 text-gray-600" />
-            <h4 className="font-medium text-gray-800">Activity Distribution</h4>
+            <BarChart3 className="w-4 h-4 text-secondary" />
+            <h4 className="font-medium text-primary">Activity Distribution</h4>
           </div>
           
           {/* Mini bar chart */}
@@ -219,13 +235,13 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
                     name: type,
                     value: Math.round(seconds / 60),
                     fill: {
-                      code: '#6366f1',
-                      build: '#10b981',
-                      test: '#f59e0b',
-                      debug: '#ef4444',
-                      research: '#8b5cf6',
-                      design: '#ec4899',
-                      document: '#84cc16',
+                      code: '#2563eb',
+                      build: '#16a34a',
+                      test: '#eab308',
+                      debug: '#dc2626',
+                      research: '#9333ea',
+                      design: '#db2777',
+                      document: '#65a30d',
                       communication: '#f97316',
                       browsing: '#06b6d4',
                       other: '#6b7280'
@@ -249,7 +265,7 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
                     .sort(([,a], [,b]) => b - a)
                     .slice(0, 5)
                     .map((entry, index) => {
-                      const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+                      const colors = ['#2563eb', '#16a34a', '#eab308', '#dc2626', '#9333ea'];
                       return <Cell key={`cell-${index}`} fill={colors[index]} />;
                     })
                   }
@@ -265,17 +281,17 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
               .slice(0, 5)
               .map(([type, seconds], index) => {
                 const percentage = Math.round((seconds / todayStats.totalTime) * 100);
-                const colors = ['bg-indigo-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500'];
+                const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-emerald-500'];
                 return (
-                  <div key={type} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={type} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-3">
                       <div className={`w-2 h-2 rounded-full ${colors[index]}`} />
                       <span className="text-lg">{getActivityIcon(type)}</span>
-                      <span className="text-sm font-medium text-gray-700 capitalize">{type}</span>
+                      <span className="text-sm font-medium text-primary capitalize">{type}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900">{formatDuration(seconds)}</span>
-                      <div className="text-xs text-gray-500">{percentage}%</div>
+                      <span className="text-sm font-semibold text-primary">{formatDuration(seconds)}</span>
+                      <div className="text-xs text-tertiary">{percentage}%</div>
                     </div>
                   </div>
                 );
@@ -287,8 +303,8 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
         {/* App Usage with Progress Bars */}
         <div>
           <div className="flex items-center space-x-2 mb-3">
-            <Activity className="w-4 h-4 text-gray-600" />
-            <h4 className="font-medium text-gray-800">Top Applications</h4>
+            <Activity className="w-4 h-4 text-secondary" />
+            <h4 className="font-medium text-primary">Top Applications</h4>
           </div>
           
           <div className="space-y-3">
@@ -304,15 +320,15 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
                 return (
                   <div key={app} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 truncate flex-1 mr-2">{app}</span>
+                      <span className="text-sm font-medium text-primary truncate flex-1 mr-2">{app}</span>
                       <div className="text-right">
-                        <span className="text-sm font-bold text-gray-900">{formatDuration(seconds)}</span>
-                        <div className="text-xs text-gray-500">{percentage}%</div>
+                        <span className="text-sm font-semibold text-primary">{formatDuration(seconds)}</span>
+                        <div className="text-xs text-tertiary">{percentage}%</div>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${colors[index]}`}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${colors[index]}`}
                         style={{ width: `${relativeWidth}%` }}
                       />
                     </div>
@@ -325,28 +341,28 @@ export function TodaysSummary({ data }: TodaysSummaryProps) {
       </div>
 
       {/* Enhanced Session Stats */}
-      <div className="mt-6 pt-4 border-t border-gray-100">
+      <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
             <div className="flex items-center justify-center mb-2">
               <Clock className="w-4 h-4 text-blue-600" />
             </div>
-            <p className="text-sm text-blue-600 font-medium mb-1">Longest Session</p>
-            <p className="text-lg font-bold text-blue-700">{formatDuration(todayStats.longestSession)}</p>
+            <p className="text-sm text-secondary font-medium mb-1">Longest Session</p>
+            <p className="text-lg font-semibold text-primary">{formatDuration(todayStats.longestSession)}</p>
           </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
+          <div className="p-3 rounded-lg bg-green-50 border border-green-100">
             <div className="flex items-center justify-center mb-2">
               <Target className="w-4 h-4 text-green-600" />
             </div>
-            <p className="text-sm text-green-600 font-medium mb-1">Average Session</p>
-            <p className="text-lg font-bold text-green-700">{formatDuration(todayStats.averageSession)}</p>
+            <p className="text-sm text-secondary font-medium mb-1">Average Session</p>
+            <p className="text-lg font-semibold text-primary">{formatDuration(todayStats.averageSession)}</p>
           </div>
-          <div className="p-3 rounded-lg bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100">
+          <div className="p-3 rounded-lg bg-orange-50 border border-orange-100">
             <div className="flex items-center justify-center mb-2">
               <Coffee className="w-4 h-4 text-orange-600" />
             </div>
-            <p className="text-sm text-orange-600 font-medium mb-1">Break Time</p>
-            <p className="text-lg font-bold text-orange-700">{formatDuration(todayStats.breakTime)}</p>
+            <p className="text-sm text-secondary font-medium mb-1">Break Time</p>
+            <p className="text-lg font-semibold text-primary">{formatDuration(todayStats.breakTime)}</p>
           </div>
         </div>
       </div>

@@ -381,7 +381,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
       case 'goal':
         return <Target className="w-5 h-5 text-blue-500" />;
       default:
-        return <Brain className="w-5 h-5 text-indigo-500" />;
+        return <Brain className="w-5 h-5 text-blue-500" />;
     }
   };
 
@@ -396,7 +396,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
       case 'goal':
         return 'bg-blue-50 border-blue-200';
       default:
-        return 'bg-indigo-50 border-indigo-200';
+        return 'bg-blue-50 border-blue-200';
     }
   };
 
@@ -430,11 +430,11 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <MessageCircle className="w-6 h-6 text-indigo-600" />
+          <MessageCircle className="w-6 h-6 text-blue-600" />
           <h3 className="text-lg font-semibold text-gray-900">AI Productivity Coach</h3>
         </div>
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
@@ -443,7 +443,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex items-center space-x-3 mb-6">
-        <MessageCircle className="w-6 h-6 text-indigo-600" />
+        <MessageCircle className="w-6 h-6 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-900">AI Productivity Coach</h3>
       </div>
 
@@ -459,7 +459,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
             onClick={() => setSelectedTab(tab.id as any)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               selectedTab === tab.id
-                ? 'bg-white text-indigo-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -504,7 +504,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
                         <ul className="text-sm text-gray-600 space-y-1">
                           {message.actions.map((action, index) => (
                             <li key={index} className="flex items-start space-x-2">
-                              <span className="text-indigo-500 mt-1">•</span>
+                              <span className="text-blue-500 mt-1">•</span>
                               <span>{action}</span>
                             </li>
                           ))}
@@ -538,7 +538,7 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
               
               <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                 <div 
-                  className="h-2 rounded-full transition-all duration-500 bg-indigo-600"
+                  className="h-2 rounded-full transition-all duration-500 bg-blue-600"
                   style={{ width: `${Math.min(100, (goal.current / goal.target) * 100)}%` }}
                 ></div>
               </div>
@@ -556,9 +556,9 @@ export function ProductivityCoach({ data, deepWorkMetrics }: ProductivityCoachPr
       {selectedTab === 'progress' && deepWorkMetrics && (
         <div className="space-y-6">
           {/* Overall Progress */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-3">Overall Performance</h4>
-            <div className="text-3xl font-bold text-indigo-600 mb-2">{deepWorkMetrics.score}/100</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">{deepWorkMetrics.score}/100</div>
             <div className="text-sm text-gray-600">Your current deep work effectiveness score</div>
           </div>
 

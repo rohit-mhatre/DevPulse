@@ -154,13 +154,13 @@ describe('ActivityMonitor', () => {
       expect(activity).toBe('code')
     })
 
-    it('should classify unknown applications as other', () => {
+    it('should classify Safari as browsing', () => {
       const activity = (activityMonitor as any).classifyActivity({
         appName: 'Safari',
         title: 'Random Website'
       })
       
-      expect(activity).toBe('other')
+      expect(activity).toBe('browsing')
     })
 
     it('should handle empty window titles', () => {

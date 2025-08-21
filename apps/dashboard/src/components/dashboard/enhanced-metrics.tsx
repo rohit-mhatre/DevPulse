@@ -1,7 +1,20 @@
 'use client';
 
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, PieChart, Pie, Cell } from 'recharts';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  RadialBarChart, 
+  RadialBar, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts/es6';
 import { TrendingUp, Target, Clock, Zap, Activity, Award, Calendar, BarChart3 } from 'lucide-react';
 import { format, subDays, isToday, isYesterday, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
@@ -39,8 +52,8 @@ interface MetricCardProps {
 
 function MetricCard({ icon, title, value, subtitle, trend, progress, color, size = 'small' }: MetricCardProps) {
   const cardClasses = size === 'large' 
-    ? "bg-white rounded-xl shadow-sm p-8 border border-gray-100"
-    : "bg-white rounded-xl shadow-sm p-6 border border-gray-100";
+    ? "card p-6"
+    : "card p-5";
 
   const getTrendIcon = () => {
     if (!trend) return null;
@@ -60,19 +73,19 @@ function MetricCard({ icon, title, value, subtitle, trend, progress, color, size
     <div className={cardClasses}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
-          <p className={`${size === 'large' ? 'text-4xl' : 'text-2xl'} font-bold text-gray-900 mb-1`}>
+          <p className="text-sm font-medium mb-2 text-secondary">{title}</p>
+          <p className={`${size === 'large' ? 'text-3xl' : 'text-2xl'} font-semibold mb-1 text-primary`}>
             {value}
           </p>
           {subtitle && (
-            <p className="text-xs text-gray-500 mb-2">{subtitle}</p>
+            <p className="text-xs mb-2 text-tertiary">{subtitle}</p>
           )}
           
           {/* Progress Bar */}
           {progress && (
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
               <div 
-                className={`h-2 rounded-full transition-all duration-300 ${progress.color}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${progress.color}`}
                 style={{ width: `${Math.min((progress.value / progress.max) * 100, 100)}%` }}
               />
             </div>
@@ -87,7 +100,7 @@ function MetricCard({ icon, title, value, subtitle, trend, progress, color, size
           )}
         </div>
         
-        <div className={`${color} p-3 rounded-lg text-white flex-shrink-0`}>
+        <div className={`${color} p-2.5 rounded-md text-white flex-shrink-0`}>
           {icon}
         </div>
       </div>
@@ -100,9 +113,9 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
     const today = new Date();
     // const yesterday = subDays(today, 1);
     
-    // Today's data
-    const todayData = data.filter(activity => isToday(new Date(activity.timestamp)));
-    const yesterdayData = data.filter(activity => isYesterday(new Date(activity.timestamp)));
+    // Use all data since it's already filtered by the API server for the selected date
+    const todayData = data;
+    const yesterdayData: ActivityData[] = []; // No yesterday data available since API only returns selected date
     
     // Weekly data for trends
     const weekData = [];
@@ -158,7 +171,7 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
       .map(([app, minutes], index) => ({
         name: app,
         value: Math.round(minutes),
-        fill: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index]
+        fill: ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7'][index]
       }));
     
     return {
@@ -190,7 +203,7 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
       {/* Main Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          icon={<Clock className="w-6 h-6" />}
+          icon={<Clock className="w-5 h-5" />}
           title="Total Active Time"
           value={formatTime(metrics.totalTime)}
           subtitle="Today&apos;s total activity"
@@ -199,11 +212,11 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
             direction: metrics.trends.time.direction,
             label: 'vs yesterday'
           }}
-          color="bg-blue-500"
+          color="bg-blue-600"
         />
         
         <MetricCard
-          icon={<Zap className="w-6 h-6" />}
+          icon={<Zap className="w-5 h-5" />}
           title="Deep Focus Time"
           value={formatTime(metrics.focusTime)}
           subtitle={`Goal: ${formatTime(metrics.focusGoal)}`}
@@ -215,13 +228,13 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
           progress={{
             value: metrics.focusTime,
             max: metrics.focusGoal,
-            color: 'bg-green-500'
+            color: 'bg-green-600'
           }}
-          color="bg-green-500"
+          color="bg-green-600"
         />
         
         <MetricCard
-          icon={<Activity className="w-6 h-6" />}
+          icon={<Activity className="w-5 h-5" />}
           title="Activities"
           value={metrics.activities}
           subtitle="Recorded today"
@@ -230,11 +243,11 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
             direction: metrics.trends.activities.direction,
             label: 'vs yesterday'
           }}
-          color="bg-purple-500"
+          color="bg-blue-600"
         />
         
         <MetricCard
-          icon={<Target className="w-6 h-6" />}
+          icon={<Target className="w-5 h-5" />}
           title="Productivity Score"
           value={`${metrics.productivityScore}%`}
           subtitle="Focus vs total time"
@@ -243,31 +256,32 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
             direction: metrics.trends.productivity.direction,
             label: 'vs weekly avg'
           }}
-          color="bg-orange-500"
+          color="bg-orange-600"
         />
       </div>
 
       {/* Detailed Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Weekly Trend */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Trends</h3>
-            <BarChart3 className="w-5 h-5 text-gray-400" />
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-semibold text-primary">Weekly Trends</h3>
+            <BarChart3 className="w-5 h-5 text-tertiary" />
           </div>
           
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={metrics.weekData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
                   contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: 'white'
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    color: '#374151',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}
                   formatter={(value, name) => {
                     if (name === 'total') return [`${value} min`, 'Total Time'];
@@ -279,16 +293,16 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
                 <Line 
                   type="monotone" 
                   dataKey="total" 
-                  stroke="#6366f1" 
+                  stroke="#3b82f6" 
                   strokeWidth={2}
-                  dot={{ fill: '#6366f1', r: 4 }}
+                  dot={{ fill: '#3b82f6', r: 3 }}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="focus" 
-                  stroke="#10b981" 
+                  stroke="#22c55e" 
                   strokeWidth={2}
-                  dot={{ fill: '#10b981', r: 4 }}
+                  dot={{ fill: '#22c55e', r: 3 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -296,21 +310,21 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
           
           <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">Total Time</span>
+              <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
+              <span className="text-secondary">Total Time</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">Focus Time</span>
+              <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+              <span className="text-secondary">Focus Time</span>
             </div>
           </div>
         </div>
 
         {/* Focus Goal Progress */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Focus Goal Progress</h3>
-            <Award className="w-5 h-5 text-gray-400" />
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-semibold text-primary">Focus Goal Progress</h3>
+            <Award className="w-5 h-5 text-tertiary" />
           </div>
           
           <div className="flex items-center justify-center h-48">
@@ -323,27 +337,27 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
                 data={[{
                   name: 'Focus Progress',
                   value: Math.min((metrics.focusTime / metrics.focusGoal) * 100, 100),
-                  fill: metrics.focusTime >= metrics.focusGoal ? '#10b981' : '#6366f1'
+                  fill: metrics.focusTime >= metrics.focusGoal ? '#22c55e' : '#3b82f6'
                 }]}
                 startAngle={90}
                 endAngle={-270}
               >
                 <RadialBar
                   dataKey="value"
-                  cornerRadius={10}
-                  fill={(metrics.focusTime / metrics.focusGoal) >= 1 ? '#10b981' : '#6366f1'}
+                  cornerRadius={8}
+                  fill={(metrics.focusTime / metrics.focusGoal) >= 1 ? '#22c55e' : '#3b82f6'}
                 />
                 <text
                   x="50%"
                   y="50%"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="fill-gray-900"
+                  className="fill-current text-primary"
                 >
-                  <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold">
+                  <tspan x="50%" dy="-0.5em" fontSize="20" fontWeight="600">
                     {Math.round((metrics.focusTime / metrics.focusGoal) * 100)}%
                   </tspan>
-                  <tspan x="50%" dy="1.5em" fontSize="12" className="fill-gray-500">
+                  <tspan x="50%" dy="1.5em" fontSize="11" className="fill-current text-tertiary">
                     {formatTime(metrics.focusTime)} / {formatTime(metrics.focusGoal)}
                   </tspan>
                 </text>
@@ -352,9 +366,9 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-secondary">
               {metrics.focusTime >= metrics.focusGoal 
-                ? `🎉 Goal achieved! ${formatTime(metrics.focusTime - metrics.focusGoal)} bonus time`
+                ? `Goal achieved! ${formatTime(metrics.focusTime - metrics.focusGoal)} bonus time`
                 : `${formatTime(metrics.focusGoal - metrics.focusTime)} remaining to reach goal`
               }
             </p>
@@ -364,10 +378,10 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
 
       {/* Top Applications */}
       {metrics.topApps.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Top Applications Today</h3>
-            <Calendar className="w-5 h-5 text-gray-400" />
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-lg font-semibold text-primary">Top Applications Today</h3>
+            <Calendar className="w-5 h-5 text-tertiary" />
           </div>
           
           <div className="flex items-center space-x-8">
@@ -390,10 +404,11 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
                   <Tooltip 
                     formatter={(value) => [`${value} min`, 'Time']}
                     contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: 'white'
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      color: '#374151',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
                   />
                 </PieChart>
@@ -408,9 +423,9 @@ export function EnhancedMetrics({ data, focusGoal = 240 }: EnhancedMetricsProps)
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: app.fill }}
                     />
-                    <span className="text-sm font-medium text-gray-900">{app.name}</span>
+                    <span className="text-sm font-medium text-primary">{app.name}</span>
                   </div>
-                  <span className="text-sm text-gray-600">{formatTime(app.value)}</span>
+                  <span className="text-sm text-secondary">{formatTime(app.value)}</span>
                 </div>
               ))}
             </div>

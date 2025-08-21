@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { devPulseDB } from '@/lib/database';
+import { performanceMonitor } from '@/lib/performance-monitor';
 
 interface ApiError extends Error {
   status?: number;
@@ -61,48 +62,109 @@ function handleApiError(error: Error | ApiError, operation: string) {
 
 
 // This connects to the same database as the desktop app
-export async function GET() {
+// Add simple in-memory cache with 30-second TTL
+const cache = new Map();
+const CACHE_TTL = 1000; // 1 second for real-time sync
+
+export async function GET(request: Request) {
+  const endTimer = performanceMonitor.startApiTimer('activity');
   const startTime = Date.now();
   
+  // Parse URL parameters
+  const { searchParams } = new URL(request.url);
+  const dateParam = searchParams.get('date');
+  
+  // Use provided date or default to today
+  const targetDate = dateParam ? new Date(dateParam) : new Date();
+  const cacheKey = `activity-data-${targetDate.toISOString().split('T')[0]}`;
+  
   try {
-    // Check if database is available with timeout
-    const dbCheckPromise = devPulseDB.isAvailable();
-    const timeoutPromise = new Promise<boolean>((_, reject) => {
-      setTimeout(() => reject(createApiError('Database availability check timed out', 503, 'DATABASE_TIMEOUT')), 5000);
-    });
-    
-    const isAvailable = await Promise.race([dbCheckPromise, timeoutPromise]);
-    
-    if (!isAvailable) {
-      console.log('Database not available - returning empty data');
+    // Check cache first
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return NextResponse.json({
-        activities: [],
-        projects: [],
-        stats: {
-          totalTime: 0,
-          activities: 0,
-          activeProjects: 0,
-          avgSessionTime: 0,
-          topApp: '',
-          productivityScore: 0
-        },
+        ...cached.data,
         metadata: {
-          source: 'fallback',
-          message: 'Desktop app database not accessible',
+          ...cached.data.metadata,
+          source: 'cache',
           responseTime: Date.now() - startTime
         }
       }, {
-        status: 200,
         headers: {
-          'Cache-Control': 'no-cache',
-          'X-Data-Source': 'fallback'
+          'Cache-Control': 'private, max-age=10',
+          'X-Response-Time': (Date.now() - startTime).toString(),
+          'X-Data-Source': 'cache'
         }
       });
     }
 
-    // Get today's activities with error handling and timeout
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Try to get data from desktop app's HTTP server
+    try {
+      const desktopUrl = `http://localhost:3001/api/activity${dateParam ? `?date=${dateParam}` : ''}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(desktopUrl, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Cache the successful response
+        cache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+
+        endTimer();
+        return NextResponse.json(data, {
+          headers: {
+            'Cache-Control': 'private, max-age=5',
+            'X-Response-Time': (Date.now() - startTime).toString(),
+            'X-Data-Source': 'desktop-app',
+            'X-Total-Time': data.stats?.totalTime?.toString() || '0'
+          }
+        });
+      } else {
+        throw new Error(`Desktop app server responded with ${response.status}`);
+      }
+    } catch (error) {
+      console.log(`Desktop app server not available: ${error.message}`);
+      // Fall back to direct database access if available
+      const isDbAvailable = await devPulseDB.isAvailable();
+      if (!isDbAvailable) {
+        console.log('Database also not available - returning empty data');
+        return NextResponse.json({
+          activities: [],
+          projects: [],
+          stats: {
+            totalTime: 0,
+            activities: 0,
+            activeProjects: 0,
+            avgSessionTime: 0,
+            topApp: '',
+            productivityScore: 0
+          },
+          metadata: {
+            source: 'fallback',
+            message: 'Desktop app and database not accessible',
+            responseTime: Date.now() - startTime
+          }
+        }, {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'X-Data-Source': 'fallback'
+          }
+        });
+      }
+    }
+
+    // Get activities for the selected date with error handling and timeout
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
     // Create timeout wrapper for database operations
@@ -123,17 +185,17 @@ export async function GET() {
           endDate: endOfDay.toISOString(),
           limit: 100
         }),
-        10000,
+        5000,
         'Get activities'
       ),
       withTimeout(
         devPulseDB.getProjects(),
-        5000,
+        3000,
         'Get projects'
       ),
       withTimeout(
-        devPulseDB.getDailyStats(today.toISOString().split('T')[0]),
-        5000,
+        devPulseDB.getDailyStats(targetDate.toISOString().split('T')[0]),
+        3000,
         'Get daily stats'
       )
     ]);
@@ -184,7 +246,7 @@ export async function GET() {
 
     const responseTime = Date.now() - startTime;
 
-    return NextResponse.json({
+    const responseData = {
       activities: transformedActivities,
       projects: projectsData,
       stats: statsData,
@@ -196,7 +258,16 @@ export async function GET() {
         hasFailures: failures.length > 0,
         failures: failures.map(f => ({ operation: f.operation, error: f.error.message }))
       }
-    }, {
+    };
+
+    // Cache the successful response
+    cache.set(cacheKey, {
+      data: responseData,
+      timestamp: Date.now()
+    });
+
+    endTimer();
+    return NextResponse.json(responseData, {
       headers: {
         'Cache-Control': 'private, max-age=10',
         'X-Response-Time': responseTime.toString(),
@@ -206,6 +277,7 @@ export async function GET() {
     });
 
   } catch (error) {
+    endTimer();
     return handleApiError(error as Error, 'GET /api/activity');
   }
 }

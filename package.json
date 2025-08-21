@@ -1,7 +1,7 @@
 {
   "name": "devpulse",
   "version": "1.0.0",
-  "description": "Privacy-first developer productivity analytics platform",
+  "description": "Developer productivity tracker with privacy-first architecture",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -18,8 +18,8 @@
     "clean": "npm run clean --workspaces"
   },
   "devDependencies": {
-    "lerna": "^8.0.0",
-    "@nx/workspace": "^17.0.0"
+    "@nx/workspace": "^17.0.0",
+    "lerna": "^8.0.0"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -32,6 +32,9 @@
     "analytics",
     "time-tracking"
   ],
-  "author": "DevPulse Team",
-  "license": "MIT"
+  "author": "DevPulse",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.2.0"
+  }
 }

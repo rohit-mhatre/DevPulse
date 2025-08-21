@@ -10,6 +10,11 @@ export const mainConfig: Configuration = {
    */
   entry: './src/main/index.ts',
   // Put your normal webpack config below here
+  target: 'electron-main',
+  node: {
+    __dirname: false,
+    __filename: false,
+  },
   module: {
     rules,
   },

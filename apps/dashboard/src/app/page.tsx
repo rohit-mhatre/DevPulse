@@ -1,22 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 // import { format, startOfDay, endOfDay, subDays, isToday } from 'date-fns';
 // import { Clock, Activity, TrendingUp, Calendar, BarChart3, Settings, Zap } from 'lucide-react';
 
 import { DashboardHeader } from '@/components/dashboard/header';
-import { ActivityChart } from '@/components/dashboard/activity-chart';
-import { ProjectBreakdown } from '@/components/dashboard/project-breakdown';
 import { TodayOverview } from '@/components/dashboard/today-overview';
-import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { TodaysSummary } from '@/components/dashboard/todays-summary';
-import { ProductivityHeatmap } from '@/components/dashboard/productivity-heatmap';
 import { EnhancedMetrics } from '@/components/dashboard/enhanced-metrics';
-import { FocusWidget } from '@/components/focus/focus-widget';
-// GitHub component temporarily disabled - import { GitHubActivityWidgetComponent } from '@/components/github';
-import { AIInsightsPanel } from '@/components/ai/ai-insights-panel';
-import { SmartRecommendations } from '@/components/ai/smart-recommendations';
-import { ProductivityCoach } from '@/components/ai/productivity-coach';
+
+// Lazy load heavy components
+const ActivityChart = lazy(() => import('@/components/dashboard/activity-chart').then(module => ({ default: module.ActivityChart })));
+const ProjectBreakdown = lazy(() => import('@/components/dashboard/project-breakdown').then(module => ({ default: module.ProjectBreakdown })));
+const RecentActivity = lazy(() => import('@/components/dashboard/recent-activity').then(module => ({ default: module.RecentActivity })));
+const ProductivityHeatmap = lazy(() => import('@/components/dashboard/productivity-heatmap').then(module => ({ default: module.ProductivityHeatmap })));
+const FocusWidget = lazy(() => import('@/components/focus/focus-widget').then(module => ({ default: module.FocusWidget })));
+
+// Loading component
+const ComponentLoader = () => (
+  <div className="card p-6 animate-pulse">
+    <div className="space-y-4">
+      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+      <div className="h-24 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+);
 
 interface ActivityData {
   timestamp: number;
@@ -39,16 +47,16 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [aiInsights, setAiInsights] = useState<any>(null);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
-  // const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch real data from the desktop app's database
   useEffect(() => {
     const fetchRealData = async () => {
       try {
-        const response = await fetch('/api/activity');
+        // Format date for API call
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const response = await fetch(`/api/activity?date=${dateStr}`);
         const data = await response.json();
         
         if (data.error) {
@@ -78,10 +86,7 @@ export default function DashboardPage() {
             productivityScore: 0
           });
           
-          // Load AI insights if we have data
-          if (activities.length > 0) {
-            loadAIInsights();
-          }
+          // AI insights removed to prevent database conflicts
         }
         
         setIsLoading(false);
@@ -107,108 +112,78 @@ export default function DashboardPage() {
     const interval = setInterval(fetchRealData, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDate]);
 
-  const loadAIInsights = async () => {
-    setIsLoadingAI(true);
-    try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 7); // Last 7 days
-      
-      const response = await fetch(`/api/ai/insights?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}&type=comprehensive`);
-      const insights = await response.json();
-      
-      if (!insights.error) {
-        setAiInsights(insights);
-      }
-    } catch (error) {
-      console.error('Failed to load AI insights:', error);
-    } finally {
-      setIsLoadingAI(false);
-    }
-  };
+  // AI insights function removed to prevent database conflicts
 
-  const getTimeRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 7);
-    return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
-    };
-  };
+  // Time range function removed with AI components
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your productivity insights...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-3"></div>
+          <p className="text-sm text-tertiary">Loading your productivity insights...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-      <DashboardHeader />
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <DashboardHeader 
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        activityData={activityData}
+        stats={stats}
+      />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Enhanced Metrics Dashboard */}
-        <div className="mb-8">
+        <div className="mb-6">
           <EnhancedMetrics data={activityData} focusGoal={240} />
         </div>
 
         {/* Today's Summary - Full Width */}
-        <div className="mb-8">
-          <TodaysSummary data={activityData} />
-        </div>
-
-        {/* AI Insights Panel - Full Width */}
-        <div className="mb-8">
-          <AIInsightsPanel data={activityData} timeRange={getTimeRange()} />
+        <div className="mb-6">
+          <TodaysSummary data={activityData} stats={stats} />
         </div>
 
         {/* Productivity Heatmap - Full Width */}
-        <div className="mb-8">
-          <ProductivityHeatmap data={activityData} />
-        </div>
-
-        {/* AI Recommendations - Full Width */}
-        <div className="mb-8">
-          <SmartRecommendations 
-            data={activityData} 
-            deepWorkMetrics={aiInsights?.insights}
-          />
+        <div className="mb-6">
+          <Suspense fallback={<ComponentLoader />}>
+            <ProductivityHeatmap data={activityData} />
+          </Suspense>
         </div>
 
         {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Charts */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             <TodayOverview data={activityData} />
-            <ActivityChart data={activityData} />
-            
-            {/* AI Productivity Coach */}
-            <ProductivityCoach 
-              data={activityData}
-              deepWorkMetrics={aiInsights?.insights}
-            />
+            <Suspense fallback={<ComponentLoader />}>
+              <ActivityChart data={activityData} />
+            </Suspense>
           </div>
           
           {/* Right Column - Sidebar */}
-          <div className="space-y-8">
-            <FocusWidget 
-              todayFocusTime={activityData.filter(a => ['code', 'build', 'test', 'debug'].includes(a.activity_type))
-                .reduce((sum, a) => sum + (a.duration_seconds), 0)} // Calculate actual focus time
-              isSessionActive={false} // Will be fetched from localStorage
-              focusScore={aiInsights?.insights?.score || stats?.productivityScore || 75}
-              dailyGoal={240 * 60} // 4 hours default
-            />
+          <div className="space-y-6">
+            <Suspense fallback={<ComponentLoader />}>
+              <FocusWidget 
+                todayFocusTime={activityData.filter(a => ['code', 'build', 'test', 'debug'].includes(a.activity_type))
+                  .reduce((sum, a) => sum + (a.duration_seconds), 0)} // Calculate actual focus time
+                isSessionActive={false} // Will be fetched from localStorage
+                focusScore={stats?.productivityScore || 75}
+                dailyGoal={240 * 60} // 4 hours default
+              />
+            </Suspense>
             {/* GitHub widget temporarily disabled - <GitHubActivityWidgetComponent /> */}
-            <ProjectBreakdown data={activityData} />
-            <RecentActivity data={activityData.slice(0, 10)} />
+            <Suspense fallback={<ComponentLoader />}>
+              <ProjectBreakdown data={activityData} />
+            </Suspense>
+            <Suspense fallback={<ComponentLoader />}>
+              <RecentActivity data={activityData.slice(0, 10)} />
+            </Suspense>
           </div>
         </div>
       </main>

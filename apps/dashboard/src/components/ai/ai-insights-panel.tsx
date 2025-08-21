@@ -104,11 +104,11 @@ export function AIInsightsPanel({ data, timeRange }: AIInsightsPanelProps) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <Brain className="w-6 h-6 text-indigo-600" />
+          <Brain className="w-6 h-6 text-blue-600" />
           <h3 className="text-lg font-semibold text-gray-900">AI Insights</h3>
         </div>
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
@@ -118,7 +118,7 @@ export function AIInsightsPanel({ data, timeRange }: AIInsightsPanelProps) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <Brain className="w-6 h-6 text-indigo-600" />
+          <Brain className="w-6 h-6 text-blue-600" />
           <h3 className="text-lg font-semibold text-gray-900">AI Insights</h3>
         </div>
         <div className="text-center text-gray-500">
@@ -135,7 +135,7 @@ export function AIInsightsPanel({ data, timeRange }: AIInsightsPanelProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex items-center space-x-3 mb-6">
-        <Brain className="w-6 h-6 text-indigo-600" />
+        <Brain className="w-6 h-6 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-900">AI Productivity Insights</h3>
         <div className="ml-auto text-sm text-gray-500">
           {Math.round(deepWorkMetrics.confidence * 100)}% confidence
@@ -144,13 +144,13 @@ export function AIInsightsPanel({ data, timeRange }: AIInsightsPanelProps) {
 
       {/* AI Score Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Deep Work Score</p>
-              <p className="text-2xl font-bold text-indigo-600">{deepWorkMetrics.score}</p>
+              <p className="text-2xl font-bold text-blue-600">{deepWorkMetrics.score}</p>
             </div>
-            <Target className="w-8 h-8 text-indigo-500" />
+            <Target className="w-8 h-8 text-blue-500" />
           </div>
           <div className="mt-2 flex items-center text-sm text-gray-600">
             {deepWorkMetrics.score >= 80 ? (
@@ -268,7 +268,7 @@ export function AIInsightsPanel({ data, timeRange }: AIInsightsPanelProps) {
                 {deepWorkMetrics.predictions.optimalWorkHours.map(hour => (
                   <span 
                     key={hour}
-                    className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium"
+                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"
                   >
                     {formatHour(hour)}
                   </span>

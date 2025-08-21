@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts/es6';
 import { FolderOpen, Clock, BarChart3 } from 'lucide-react';
 import { isToday } from 'date-fns';
 
@@ -19,7 +19,8 @@ interface ProjectBreakdownProps {
 
 export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
   const projectStats = useMemo(() => {
-    const todayData = data.filter(activity => isToday(new Date(activity.timestamp)));
+    // Use all data since it's already filtered by the API server for the selected date
+    const todayData = data;
     const projectMap: Record<string, {
       name: string;
       totalTime: number;
@@ -76,11 +77,11 @@ export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
 
   // const getProjectColor = (index: number): string => {
   //   const colors = [
-  //     'bg-indigo-500',
+  //     'bg-blue-500',
   //     'bg-green-500',
   //     'bg-yellow-500', 
   //     'bg-red-500',
-  //     'bg-purple-500',
+  //     'bg-emerald-500',
   //     'bg-pink-500'
   //   ];
   //   return colors[index % colors.length];
@@ -122,7 +123,7 @@ export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
                     data={projectStats.map((project, index) => ({
                       name: project.name,
                       value: project.totalTime,
-                      fill: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index] || '#6b7280'
+                      fill: ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#db2777'][index] || '#6b7280'
                     }))}
                     cx="50%"
                     cy="50%"
@@ -132,7 +133,7 @@ export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
                     dataKey="value"
                   >
                     {projectStats.map((entry, index) => {
-                      const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+                      const colors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#db2777'];
                       return <Cell key={`cell-${index}`} fill={colors[index] || '#6b7280'} />;
                     })}
                   </Pie>
@@ -153,9 +154,9 @@ export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
           {/* Enhanced Project List */}
           <div className="space-y-3">
             {projectStats.map((project, index) => {
-              const colors = ['bg-indigo-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500', 'bg-pink-500'];
-              const bgColors = ['bg-indigo-50', 'bg-green-50', 'bg-yellow-50', 'bg-red-50', 'bg-purple-50', 'bg-pink-50'];
-              const textColors = ['text-indigo-700', 'text-green-700', 'text-yellow-700', 'text-red-700', 'text-purple-700', 'text-pink-700'];
+              const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-emerald-500', 'bg-pink-500'];
+              const bgColors = ['bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-red-50', 'bg-emerald-50', 'bg-pink-50'];
+              const textColors = ['text-blue-700', 'text-green-700', 'text-yellow-700', 'text-red-700', 'text-emerald-700', 'text-pink-700'];
               
               return (
                 <div key={project.name} className={`p-4 rounded-lg ${bgColors[index] || 'bg-gray-50'} border border-opacity-20 hover:shadow-md transition-all`}>
@@ -212,14 +213,14 @@ export function ProjectBreakdown({ data }: ProjectBreakdownProps) {
       {projectStats.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-100">
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100">
+            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-50 border border-blue-100">
               <div className="flex items-center justify-center mb-1">
-                <BarChart3 className="w-4 h-4 text-indigo-600" />
+                <BarChart3 className="w-4 h-4 text-blue-600" />
               </div>
-              <p className="text-lg font-bold text-indigo-700">
+              <p className="text-lg font-bold text-blue-700">
                 {projectStats.length}
               </p>
-              <p className="text-xs text-indigo-600 font-medium">Active Projects</p>
+              <p className="text-xs text-blue-600 font-medium">Active Projects</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
               <div className="flex items-center justify-center mb-1">

@@ -285,7 +285,7 @@ export function AnomalyDetector({ data, timeRange }: AnomalyDetectorProps) {
       case 'pattern_break':
         return <Zap className="w-4 h-4 text-amber-500" />;
       case 'unusual_timing':
-        return <Clock className="w-4 h-4 text-purple-500" />;
+        return <Clock className="w-4 h-4 text-emerald-500" />;
       default:
         return <Shield className="w-4 h-4 text-blue-500" />;
     }

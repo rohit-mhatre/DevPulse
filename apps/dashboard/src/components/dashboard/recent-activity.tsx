@@ -25,7 +25,7 @@ export function RecentActivity({ data }: RecentActivityProps) {
       case 'communication':
         return <MessageSquare className="w-4 h-4 text-yellow-500" />;
       case 'design':
-        return <Palette className="w-4 h-4 text-purple-500" />;
+        return <Palette className="w-4 h-4 text-emerald-500" />;
       case 'research':
         return <Search className="w-4 h-4 text-red-500" />;
       default:
@@ -73,7 +73,7 @@ export function RecentActivity({ data }: RecentActivityProps) {
       case 'communication':
         return 'bg-yellow-100 text-yellow-800';
       case 'design':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-emerald-100 text-emerald-800';
       case 'research':
         return 'bg-red-100 text-red-800';
       default:
@@ -88,7 +88,7 @@ export function RecentActivity({ data }: RecentActivityProps) {
           <Clock className="w-5 h-5 text-gray-600" />
           <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
         </div>
-        <button className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
           View All
         </button>
       </div>

@@ -10,10 +10,22 @@ contextBridge.exposeInMainWorld('devPulseAPI', {
   getTodaysSummary: () => ipcRenderer.invoke('get-todays-summary'),
   getTrackingStatus: () => ipcRenderer.invoke('get-tracking-status'),
   getDashboardUrl: () => ipcRenderer.invoke('get-dashboard-url'),
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   
   // Listen for status updates
   onStatusUpdate: (callback: (status: any) => void) => {
     ipcRenderer.on('status-update', (_event, status) => callback(status));
+  }
+});
+
+// Expose electron API for dashboard when running in desktop app
+contextBridge.exposeInMainWorld('electron', {
+  invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+  on: (channel: string, callback: (...args: any[]) => void) => {
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args));
+  },
+  removeAllListeners: (channel: string) => {
+    ipcRenderer.removeAllListeners(channel);
   }
 });
 
@@ -25,6 +37,7 @@ declare global {
       getTodaysSummary: () => Promise<any>;
       getTrackingStatus: () => Promise<any>;
       getDashboardUrl: () => Promise<string>;
+      openExternal: (url: string) => Promise<void>;
       onStatusUpdate: (callback: (status: any) => void) => void;
     };
   }

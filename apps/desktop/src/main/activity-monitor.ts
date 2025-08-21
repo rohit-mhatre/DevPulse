@@ -24,6 +24,12 @@ export class ActivityMonitor {
   private projectDetector: ProjectDetector;
   private readonly MONITORING_INTERVAL = 2000; // 2 seconds
   private readonly IDLE_THRESHOLD = 300000; // 5 minutes in milliseconds
+  
+  // Focus Mode properties
+  private focusModeActive = false;
+  private currentFocusSession: string | null = null;
+  private distractionWarnings = 0;
+  private lastDistractionWarning: Date = new Date(0);
 
   constructor(database: LocalDatabase) {
     this.database = database;
@@ -412,6 +418,15 @@ export class ActivityMonitor {
       this.currentActivity = newActivity;
       this.activityStartTime = now;
     }
+    
+    // Check for distractions if focus mode is active
+    if (this.focusModeActive && this.currentActivity) {
+      this.checkForDistractions(
+        { appName: this.currentActivity.appName, title: this.currentActivity.windowTitle },
+        this.currentActivity.activityType
+      );
+    }
+    
     // If same activity continues, just update timestamp
   }
 
@@ -541,8 +556,158 @@ export class ActivityMonitor {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // Focus Mode and Distraction Detection
+  enableFocusMode(sessionId?: string): void {
+    this.focusModeActive = true;
+    this.currentFocusSession = sessionId || this.generateId();
+    this.distractionWarnings = 0;
+    console.log(`🎯 Focus mode enabled for session: ${this.currentFocusSession}`);
+    
+    // Store focus session start in database
+    this.database.setSetting('focus_mode_active', 'true');
+    this.database.setSetting('focus_session_id', this.currentFocusSession);
+    this.database.setSetting('focus_session_start', new Date().toISOString());
+  }
+
+  disableFocusMode(): void {
+    if (this.focusModeActive) {
+      console.log(`🎯 Focus mode disabled. Warnings during session: ${this.distractionWarnings}`);
+      
+      // Save focus session summary
+      const sessionStart = this.database.getSetting('focus_session_start');
+      if (sessionStart && this.currentFocusSession) {
+        const duration = Math.floor((Date.now() - new Date(sessionStart).getTime()) / 1000);
+        this.database.setSetting(`focus_session_${this.currentFocusSession}_duration`, duration.toString());
+        this.database.setSetting(`focus_session_${this.currentFocusSession}_warnings`, this.distractionWarnings.toString());
+      }
+    }
+    
+    this.focusModeActive = false;
+    this.currentFocusSession = null;
+    this.distractionWarnings = 0;
+    
+    // Clear focus mode from database
+    this.database.setSetting('focus_mode_active', 'false');
+    this.database.setSetting('focus_session_id', '');
+  }
+
+  private checkForDistractions(window: ActiveWindow, activityType: ActivityType): void {
+    if (!this.focusModeActive) return;
+
+    const isDistraction = this.isDistracting(window, activityType);
+    
+    if (isDistraction) {
+      const now = new Date();
+      const timeSinceLastWarning = now.getTime() - this.lastDistractionWarning.getTime();
+      
+      // Only show warning if it's been more than 30 seconds since last warning
+      if (timeSinceLastWarning > 30000) {
+        this.showDistractionWarning(window);
+        this.distractionWarnings++;
+        this.lastDistractionWarning = now;
+        
+        console.log(`⚠️ Distraction detected: ${window.appName} (${activityType}) - Warning #${this.distractionWarnings}`);
+      }
+    }
+  }
+
+  private isDistracting(window: ActiveWindow, activityType: ActivityType): boolean {
+    const appName = window.appName.toLowerCase();
+    const title = window.title.toLowerCase();
+    
+    // Check for distracting activity types
+    const distractingTypes = ['browsing', 'other'];
+    if (distractingTypes.includes(activityType)) {
+      
+      // However, allow research and documentation browsing
+      const researchIndicators = [
+        'documentation', 'docs', 'api reference', 'readme', 'guide',
+        'stackoverflow', 'github', 'developer', 'tutorial', 'learn'
+      ];
+      
+      const isResearch = researchIndicators.some(indicator => title.includes(indicator));
+      if (isResearch) return false; // Research is not a distraction
+      
+      return true;
+    }
+    
+    // Check for explicitly distracting apps
+    const distractingApps = [
+      'spotify', 'youtube', 'netflix', 'twitter', 'facebook', 'instagram', 
+      'tiktok', 'reddit', 'discord', 'slack', 'telegram', 'whatsapp',
+      'games', 'steam', 'gaming', 'news'
+    ];
+    
+    const isDistracting = distractingApps.some(distraction => 
+      appName.includes(distraction) || title.includes(distraction)
+    );
+    
+    return isDistracting;
+  }
+
+  private showDistractionWarning(window: ActiveWindow): void {
+    // Send IPC message to main window if it exists
+    const allWindows = BrowserWindow.getAllWindows();
+    if (allWindows.length > 0) {
+      allWindows[0].webContents.send('distraction-warning', {
+        appName: window.appName,
+        title: window.title,
+        warningCount: this.distractionWarnings + 1,
+        sessionId: this.currentFocusSession
+      });
+    }
+
+    // Also show system notification
+    this.showNotification(
+      '🎯 Focus Mode Alert',
+      `Distraction detected: ${window.appName}. Stay focused on your goals!`
+    );
+  }
+
+  private showNotification(title: string, body: string): void {
+    try {
+      const { Notification } = require('electron');
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title,
+          body,
+          silent: false
+        });
+        notification.show();
+      }
+    } catch (error) {
+      console.error('Failed to show notification:', error);
+    }
+  }
+
+  // Public focus mode methods
+  isFocusModeActive(): boolean {
+    return this.focusModeActive;
+  }
+
+  getCurrentFocusSession(): string | null {
+    return this.currentFocusSession;
+  }
+
+  getFocusSessionStats(): { warnings: number; duration: number } {
+    if (!this.focusModeActive || !this.currentFocusSession) {
+      return { warnings: 0, duration: 0 };
+    }
+
+    const sessionStart = this.database.getSetting('focus_session_start');
+    const duration = sessionStart 
+      ? Math.floor((Date.now() - new Date(sessionStart).getTime()) / 1000)
+      : 0;
+
+    return {
+      warnings: this.distractionWarnings,
+      duration
+    };
+  }
+
   // Cleanup
   cleanup(): void {
+    this.disableFocusMode();
     this.stopMonitoring();
   }
 }

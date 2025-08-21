@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { createServer } from 'http';
 import { LocalDatabase } from './database';
 import { ActivityMonitor } from './activity-monitor';
 import { SystemTrayController } from './tray';
@@ -49,12 +50,115 @@ const createWindow = (): BrowserWindow => {
     mainWindow = null;
   });
 
+  // Handle external links - force them to open in external browser
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    // If it's localhost:3000 (dashboard), open in external browser
+    if (url.includes('localhost:3000')) {
+      shell.openExternal(url);
+      return { action: 'deny' }; // Prevent opening in Electron
+    }
+    return { action: 'allow' }; // Allow other URLs
+  });
+
+  // Also handle navigation attempts
+  window.webContents.on('will-navigate', (event, navigationUrl) => {
+    if (navigationUrl.includes('localhost:3000')) {
+      event.preventDefault();
+      shell.openExternal(navigationUrl);
+    }
+  });
+
+  // Listen for distraction warnings from ActivityMonitor
+  window.webContents.on('did-finish-load', () => {
+    // Re-send any pending distraction warnings when window loads
+    console.log('Main window loaded, ready for IPC messages');
+  });
+
   // Handle minimize to tray
   window.on('minimize', () => {
     window.hide();
   });
 
   return window;
+};
+
+const createDataServer = (): void => {
+  const server = createServer((req, res) => {
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    const url = new URL(req.url!, 'http://localhost');
+    
+    if (url.pathname === '/api/activity') {
+      try {
+        const dateParam = url.searchParams.get('date');
+        const targetDate = dateParam ? new Date(dateParam) : new Date();
+        const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+        
+        const activities = database.getActivitiesByTimeRange(startOfDay, endOfDay);
+        const projects = database.getAllProjects();
+        
+        // Calculate stats
+        const totalTime = activities.reduce((sum, a) => sum + a.duration_seconds, 0);
+        const stats = {
+          totalTime,
+          activities: activities.length,
+          activeProjects: new Set(activities.map(a => a.project_id).filter(Boolean)).size,
+          avgSessionTime: activities.length > 0 ? Math.floor(totalTime / activities.length) : 0,
+          topApp: activities.length > 0 
+            ? activities.reduce((acc, curr) => acc.app_name === curr.app_name ? acc : curr, activities[0]).app_name
+            : '',
+          productivityScore: Math.min(Math.floor((totalTime / 28800) * 100), 100) // Out of 8 hours
+        };
+
+        const responseData = {
+          activities: activities.map(a => ({
+            timestamp: a.started_at.getTime(),
+            activity_type: a.activity_type,
+            app_name: a.app_name,
+            duration_seconds: a.duration_seconds,
+            project_name: projects.find(p => p.id === a.project_id)?.name || null,
+            started_at: a.started_at.toISOString()
+          })),
+          projects: projects.map(p => ({
+            id: p.id,
+            name: p.name,
+            path: p.path
+          })),
+          stats,
+          metadata: {
+            source: 'desktop-app',
+            responseTime: 0,
+            date: targetDate.toISOString().split('T')[0]
+          }
+        };
+
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify(responseData));
+      } catch (error) {
+        console.error('Data server error:', error);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Internal server error' }));
+      }
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Not found' }));
+    }
+  });
+
+  server.listen(3001, 'localhost', () => {
+    console.log('📡 Data server running on http://localhost:3001');
+  });
 };
 
 const setupIPCHandlers = (): void => {
@@ -114,6 +218,45 @@ const setupIPCHandlers = (): void => {
     const config = AppConfig.getInstance();
     return config.getDashboardUrl();
   });
+
+  ipcMain.handle('open-external', (_, url: string) => {
+    return shell.openExternal(url);
+  });
+
+  // Focus Mode IPC handlers
+  ipcMain.handle('focus-start-session', async (_, sessionId: string) => {
+    try {
+      activityMonitor.enableFocusMode(sessionId);
+      return { success: true, sessionId };
+    } catch (error) {
+      console.error('Error starting focus session:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('focus-end-session', async () => {
+    try {
+      const stats = activityMonitor.getFocusSessionStats();
+      activityMonitor.disableFocusMode();
+      return { success: true, stats };
+    } catch (error) {
+      console.error('Error ending focus session:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('focus-get-status', () => {
+    try {
+      return {
+        isActive: activityMonitor.isFocusModeActive(),
+        currentSession: activityMonitor.getCurrentFocusSession(),
+        stats: activityMonitor.getFocusSessionStats()
+      };
+    } catch (error) {
+      console.error('Error getting focus status:', error);
+      return { isActive: false, currentSession: null, stats: { warnings: 0, duration: 0 } };
+    }
+  });
 };
 
 const initializeApplication = async (): Promise<void> => {
@@ -149,6 +292,9 @@ const initializeApplication = async (): Promise<void> => {
     
     // Set up IPC handlers for real data communication
     setupIPCHandlers();
+    
+    // Start data server for web dashboard
+    createDataServer();
     
     console.log('DevPulse initialization complete');
   } catch (error) {

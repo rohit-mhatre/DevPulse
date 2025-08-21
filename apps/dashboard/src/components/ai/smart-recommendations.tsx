@@ -101,7 +101,7 @@ export function SmartRecommendations({ data, deepWorkMetrics }: SmartRecommendat
         impact: 'Foundation for all AI insights',
         timeframe: 'Immediate',
         confidence: 1.0,
-        icon: <Target className="w-5 h-5 text-indigo-500" />
+        icon: <Target className="w-5 h-5 text-blue-500" />
       }];
     }
 
@@ -140,7 +140,7 @@ export function SmartRecommendations({ data, deepWorkMetrics }: SmartRecommendat
         impact: 'Reduce context switching by 60%',
         timeframe: 'This week',
         confidence: 0.9,
-        icon: <Brain className="w-5 h-5 text-purple-500" />
+        icon: <Brain className="w-5 h-5 text-emerald-500" />
       });
     }
 
@@ -209,7 +209,7 @@ export function SmartRecommendations({ data, deepWorkMetrics }: SmartRecommendat
         impact: 'Reduce productivity variance by 50%',
         timeframe: 'Next 2 weeks',
         confidence: 0.78,
-        icon: <Calendar className="w-5 h-5 text-indigo-500" />
+        icon: <Calendar className="w-5 h-5 text-blue-500" />
       });
     }
 
@@ -396,7 +396,7 @@ export function SmartRecommendations({ data, deepWorkMetrics }: SmartRecommendat
                     
                     <div>
                       <div className="flex items-center space-x-1 mb-1">
-                        <Clock className="w-4 h-4 text-purple-500" />
+                        <Clock className="w-4 h-4 text-emerald-500" />
                         <span className="font-medium text-gray-700">Timeframe</span>
                       </div>
                       <p className="text-gray-600">{rec.timeframe}</p>
@@ -414,13 +414,13 @@ export function SmartRecommendations({ data, deepWorkMetrics }: SmartRecommendat
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h4>
           <div className="flex flex-wrap gap-2">
-            <button className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors">
+            <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
               Start Focus Session
             </button>
             <button className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
               Schedule Break
             </button>
-            <button className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors">
+            <button className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-200 transition-colors">
               Review Schedule
             </button>
           </div>

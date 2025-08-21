@@ -1,0 +1,48 @@
+{
+  "name": "devpulse-performance-benchmarks",
+  "version": "1.0.0",
+  "description": "Comprehensive performance testing suite for DevPulse",
+  "private": true,
+  "scripts": {
+    "benchmark": "tsx src/run-all-benchmarks.ts",
+    "benchmark:desktop": "tsx src/desktop/run-desktop-benchmarks.ts",
+    "benchmark:api": "tsx src/api/run-api-benchmarks.ts", 
+    "benchmark:frontend": "tsx src/frontend/run-frontend-benchmarks.ts",
+    "benchmark:system": "tsx src/system/run-system-benchmarks.ts",
+    "benchmark:database": "tsx src/database/run-database-benchmarks.ts",
+    "benchmark:report": "tsx src/generate-report.ts",
+    "monitor": "tsx src/monitoring/performance-monitor.ts",
+    "load-test": "tsx src/load-testing/run-load-tests.ts",
+    "profile": "tsx src/profiling/cpu-memory-profiler.ts",
+    "health-check": "tsx src/health/system-health-check.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "benchmark": "^2.1.4",
+    "puppeteer": "^22.15.0",
+    "web-vitals": "^4.2.3",
+    "autocannon": "^8.0.0",
+    "clinic": "^13.0.0",
+    "lighthouse": "^12.0.0",
+    "systeminformation": "^5.22.11",
+    "pidusage": "^3.0.2",
+    "node-cron": "^3.0.3",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "table": "^6.8.2",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/benchmark": "^2.1.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.5.3"
+  },
+  "keywords": [
+    "performance",
+    "benchmarks",
+    "testing",
+    "monitoring",
+    "devpulse"
+  ]
+}

@@ -125,7 +125,11 @@ export class SystemTrayController {
       { type: 'separator' },
       {
         label: 'Open Dashboard',
-        click: () => this.openDashboard()
+        click: () => {
+          this.openDashboard().catch(error => {
+            console.error('Error in dashboard click handler:', error);
+          });
+        }
       },
       {
         label: 'Settings',
@@ -346,13 +350,18 @@ export class SystemTrayController {
     return [headers, ...rows].map(row => row.join(',')).join('\\n');
   }
 
-  private openDashboard(): void {
-    // Get the dynamic dashboard URL
-    const config = AppConfig.getInstance();
-    const dashboardUrl = config.getDashboardUrl();
-    
-    shell.openExternal(dashboardUrl);
-    console.log(`🚀 Opening DevPulse web dashboard at ${dashboardUrl}`);
+  private async openDashboard(): Promise<void> {
+    try {
+      // Get the dynamic dashboard URL
+      const config = AppConfig.getInstance();
+      const dashboardUrl = await config.getDashboardUrl();
+      
+      shell.openExternal(dashboardUrl);
+      console.log(`🚀 Opening DevPulse web dashboard at ${dashboardUrl}`);
+    } catch (error) {
+      console.error('Error opening dashboard:', error);
+      this.showNotification('Error', 'Could not open dashboard. Make sure it is running.');
+    }
   }
 
   private openSettings(): void {

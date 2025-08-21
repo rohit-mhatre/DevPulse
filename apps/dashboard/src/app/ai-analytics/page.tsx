@@ -141,12 +141,12 @@ export default function AIAnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
         <DashboardHeader />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Analyzing your productivity patterns with AI...</p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function AIAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -165,7 +165,7 @@ export default function AIAnalyticsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <Brain className="w-8 h-8 text-indigo-600" />
+                <Brain className="w-8 h-8 text-blue-600" />
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">AI Productivity Analytics</h1>
                   <p className="text-gray-600">
@@ -188,7 +188,7 @@ export default function AIAnalyticsPage() {
                     onClick={() => handlePeriodChange(period.id as any)}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       selectedPeriod === period.id
-                        ? 'bg-indigo-100 text-indigo-700'
+                        ? 'bg-blue-100 text-blue-700'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -210,7 +210,7 @@ export default function AIAnalyticsPage() {
               <button
                 onClick={exportInsights}
                 disabled={!aiData}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 <span>Export</span>
@@ -223,7 +223,7 @@ export default function AIAnalyticsPage() {
             <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center space-x-3">
-                  <Target className="w-8 h-8 text-indigo-500" />
+                  <Target className="w-8 h-8 text-blue-500" />
                   <div>
                     <p className="text-sm font-medium text-gray-600">Deep Work Score</p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -346,7 +346,7 @@ export default function AIAnalyticsPage() {
                       {aiData.insights.predictions.optimalWorkHours.map((hour: number) => (
                         <span 
                           key={hour}
-                          className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs"
+                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
                         >
                           {hour.toString().padStart(2, '0')}:00
                         </span>

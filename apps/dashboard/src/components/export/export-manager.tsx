@@ -37,9 +37,9 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
     { id: 'build', label: 'Building', color: 'bg-green-500' },
     { id: 'test', label: 'Testing', color: 'bg-yellow-500' },
     { id: 'debug', label: 'Debugging', color: 'bg-red-500' },
-    { id: 'research', label: 'Research', color: 'bg-purple-500' },
+    { id: 'research', label: 'Research', color: 'bg-emerald-500' },
     { id: 'design', label: 'Design', color: 'bg-pink-500' },
-    { id: 'document', label: 'Documentation', color: 'bg-indigo-500' },
+    { id: 'document', label: 'Documentation', color: 'bg-blue-500' },
     { id: 'meeting', label: 'Meetings', color: 'bg-orange-500' },
     { id: 'review', label: 'Code Review', color: 'bg-teal-500' },
     { id: 'browsing', label: 'Browsing', color: 'bg-gray-500' },
@@ -287,7 +287,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Download className="w-6 h-6 text-indigo-600" />
+          <Download className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-900">Export Data</h2>
         </div>
         <button
@@ -313,7 +313,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
                     type="date"
                     value={filters.startDate}
                     onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -322,7 +322,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
                     type="date"
                     value={filters.endDate}
                     onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -334,7 +334,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
               <select
                 value={filters.format}
                 onChange={(e) => setFilters(prev => ({ ...prev, format: e.target.value as 'csv' | 'json' }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="json">JSON</option>
                 <option value="csv">CSV</option>
@@ -353,7 +353,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
                     onClick={() => handleActivityTypeToggle(type.id)}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       filters.activityTypes.includes(type.id)
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -375,7 +375,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
                     onClick={() => handleSessionTypeToggle(type.id)}
                     className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       filters.sessionTypes.includes(type.id)
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -401,7 +401,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
             onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all flex-1 justify-center ${
               activeTab === tab.id
-                ? 'bg-white text-indigo-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -445,9 +445,9 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
 
         {activeTab === 'summary' && (
           <div className="text-center py-4">
-            <div className="bg-purple-50 rounded-lg p-4 mb-4">
-              <h3 className="font-semibold text-purple-900 mb-2">Productivity Summary Export</h3>
-              <p className="text-purple-700 text-sm">
+            <div className="bg-emerald-50 rounded-lg p-4 mb-4">
+              <h3 className="font-semibold text-emerald-900 mb-2">Productivity Summary Export</h3>
+              <p className="text-emerald-700 text-sm">
                 Export aggregated productivity metrics including daily totals, productivity percentages, 
                 focus scores, and goal progress.
               </p>
@@ -466,7 +466,7 @@ export function ExportManager({ focusSessions = [] }: ExportManagerProps) {
             className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
               isExporting
                 ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
             {isExporting ? (

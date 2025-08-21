@@ -9,6 +9,11 @@ rules.push({
 });
 
 export const rendererConfig: Configuration = {
+  target: 'electron-renderer',
+  node: {
+    __dirname: false,
+    __filename: false,
+  },
   module: {
     rules,
   },

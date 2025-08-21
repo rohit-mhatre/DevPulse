@@ -29,23 +29,23 @@ export function FocusWidget({
   const progressPercentage = Math.min((todayFocusTime / dailyGoal) * 100, 100);
 
   const getFocusScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    return 'text-red-400';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
-    <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+    <div className="card rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-colors">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <div className="text-2xl">🎯</div>
-          <h3 className="text-lg font-semibold text-white">Focus Sessions</h3>
+          <h3 className="text-lg font-semibold text-primary">Focus Sessions</h3>
         </div>
         
         {isSessionActive && (
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-400 font-medium">Active</span>
+            <span className="text-sm text-green-600 font-medium">Active</span>
           </div>
         )}
       </div>
@@ -53,12 +53,12 @@ export function FocusWidget({
       {/* Progress towards daily goal */}
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-400">Daily Focus Goal</span>
-          <span className="text-white font-medium">
+          <span className="text-tertiary">Daily Focus Goal</span>
+          <span className="text-primary font-medium">
             {formatTime(todayFocusTime)} / {formatTime(dailyGoal)}
           </span>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
             style={{ width: `${progressPercentage}%` }}
